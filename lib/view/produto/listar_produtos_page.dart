@@ -19,7 +19,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
   @override
   void initState() {
     super.initState();
-    _refreshList();
+    //_refreshList();
   }
 
   @override
