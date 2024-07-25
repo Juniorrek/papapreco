@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Premium Price',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurpleAccent),
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Premium Price'),
@@ -46,51 +46,63 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
       body: Center(
         child: Form(
-          key: _formKey,
-          child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Image(
-              image: AssetImage('assets/images/pp.png'),
-              height: 150,
-            ),
-            const Text("Premium Price"),
-            TextFormField(
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Produto:'
-              ),
-              controller: _nomeProdutoController,
-              validator: (value) {
-                if (value!.isEmpty) {
-                  return 'Campo não pode ser vazio';
-                }
-                return null;
-              },
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  Navigator.pushNamed(
-                    context, 
-                    ListarProdutosPage.routeName,
-                    arguments: <String, String>{
-                      "nomeProduto": _nomeProdutoController.text
-                    }
-                  );
-                }
-              },
-              child: Text('Pesquisar'),
-            )
-          ],
-        ))
-        ,
+            key: _formKey,
+            child: Column(
+              children: <Widget>[
+                const Expanded(
+                    child: Column(children: <Widget>[
+                  Image(
+                    image: AssetImage('assets/images/pp.png'),
+                    height: 150,
+                  ),
+                  Text(
+                    "Premium Price",
+                    style: TextStyle(fontSize: 30),
+                  ),
+                ])),
+                Expanded(
+                    child: Column(children: <Widget>[
+                  Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 8),
+                      child: TextFormField(
+                        decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'Produto:'),
+                        controller: _nomeProdutoController,
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Campo não pode ser vazio';
+                          }
+                          return null;
+                        },
+                      )),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        Navigator.pushNamed(
+                            context, ListarProdutosPage.routeName,
+                            arguments: <String, String>{
+                              "nomeProduto": _nomeProdutoController.text
+                            });
+                      }
+                    },
+                    child: const Text('Pesquisar'),
+                  )
+                ])),
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 8),
+                      child: ElevatedButton(
+                          onPressed: () {}, child: const Text("Login"))),
+                  ElevatedButton(
+                      onPressed: () {}, child: const Text("Criar Conta")),
+                ])
+              ],
+            )),
       ),
     );
   }
