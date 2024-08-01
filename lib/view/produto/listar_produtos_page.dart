@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:premiumprice/helper/error.dart';
 import 'package:premiumprice/model/produto.dart';
 import 'package:premiumprice/repositories/produto_repository.dart';
+import 'package:premiumprice/routes/routes.dart';
+import 'package:premiumprice/util/map_util.dart';
 
 class ListarProdutosPage extends StatefulWidget {
-  const ListarProdutosPage({super.key});
+  final String nomeProduto;
+  final double latitude;
+  final double longitude;
+
+  const ListarProdutosPage({super.key, required this.nomeProduto, required this.latitude, required this.longitude });
 
   static const String routeName = '/produtos';
 
@@ -18,14 +26,39 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
 
   List<Produto> _lista = <Produto>[];
 
+  String _localizacaoAtual = '';
+
   @override
   void initState() {
     super.initState();
 
-    final Map m = ModalRoute.of(context)!.settings.arguments as Map;
-    _nomeProdutoController.text = m["nomeProduto"];
+    _nomeProdutoController.text = widget.nomeProduto;
+
     _refreshList();
+
+    _setLocalizacaoAtual(widget.latitude, widget.longitude);
   }
+
+  //NÃO CONSIGO JOGAR NA UTIL PQ PRA CHAMAR NA INITSTATE PRECISA SER ASYNC
+  //ENTÃO POR ENQUANTO CODIGO DUPLICADO
+  /////////////////////////////////////////////////////////////
+  void _setLocalizacaoAtual(double latitude, double longitude) async {
+    dynamic currentGeocoding = await MapUtil.reverseGeocoding(latitude, longitude);
+    setState(() {
+      _localizacaoAtual = currentGeocoding['address']['road'] + ' ' + currentGeocoding['address']['house_number'];
+    });
+  }
+
+  _definirLocalizacao(context) async {
+      final LatLong result = await Navigator.pushNamed(context,Routes.definirLocalizacao) as LatLong;
+
+      // When a BuildContext is used from a StatefulWidget, the mounted property
+      // must be checked after an asynchronous gap.
+      if (!context.mounted) return;
+
+      _setLocalizacaoAtual(result.latitude, result.longitude);
+  }
+  /////////////////////////////////////////////////////////////
 
   @override
   void dispose() {
@@ -83,11 +116,10 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
         appBar: AppBar(
           title: const Text("Premium Price"),
-          automaticallyImplyLeading: false,
+          //automaticallyImplyLeading: false,
         ),
         body: Column(
           children: [
@@ -110,14 +142,42 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                             return null;
                           },
                         )),
-                    ElevatedButton(
+
+                  TextButton(
                       onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _refreshList();
-                        }
+                          _definirLocalizacao(context);
                       },
-                      child: const Text('Pesquisar'),
-                    )
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(_localizacaoAtual + ' (5km)'),
+                          const Icon(Icons.arrow_drop_down)
+                        ],
+                      )),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.map),
+                          onPressed: () {
+                            Navigator.pushNamed(
+                                context, Routes.listarProdutosMapa);
+                          },
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              _refreshList();
+                            }
+                          },
+                          child: const Text('Pesquisar'),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.filter_alt),
+                          onPressed: () {},
+                        ),
+                      ],
+                    ),
                   ],
                 )),
             Expanded(
