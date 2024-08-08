@@ -3,6 +3,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:premiumprice/model/produto.dart';
 import 'package:premiumprice/repositories/produto_repository.dart';
+import 'dart:math';
+
+import 'package:premiumprice/util/map_util.dart';
 
 class ListarProdutosMapaPage extends StatefulWidget {
   final String nomeProduto;
@@ -26,6 +29,9 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
   List<Marker> _markers = <Marker>[];
   List<Produto> _produtos = <Produto>[];
 
+  final MapController _mapController = MapController();
+  
+
   @override
   void initState() {
     super.initState();
@@ -36,18 +42,25 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
 
             _markers = _gerarMarkers(_produtos);
         });
-    });
-  }
 
-  void test() {
-    setState(() {
-      _markers = _gerarMarkers(_produtos);
+        LatLng centroide = _calcularCentroideProdutos(_produtos);
+        _mapController.move(centroide, MapUtil.defaultZoom);
     });
   }
 
   @override
   void dispose() {
     super.dispose();
+  }
+
+  LatLng _calcularCentroideProdutos(List<Produto> produtos) {
+    double latitude = (produtos.map<double>((p) => p.latitude).reduce(max)
+                    + produtos.map<double>((p) => p.latitude).reduce(min)) / 2;
+
+    double longitude = (produtos.map<double>((p) => p.longitude).reduce(max)
+                    + produtos.map<double>((p) => p.longitude).reduce(min)) / 2;
+
+    return LatLng(latitude, longitude);
   }
 
   List<Marker> _gerarMarkers(List<Produto> produtos) {
@@ -79,9 +92,10 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
         body: Stack(
           children: [
             FlutterMap(
+                mapController: _mapController,
               options: MapOptions(
-                initialCenter: const LatLng(-25.469814, -49.235499),
-                initialZoom: 19,
+                initialCenter: LatLng(MapUtil.defaultLatitude, MapUtil.defaultLongitude),
+                initialZoom: MapUtil.defaultZoom,
                 cameraConstraint: CameraConstraint.contain(
                   bounds: LatLngBounds(
                     const LatLng(-90, -180),

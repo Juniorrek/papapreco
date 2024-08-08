@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
+import 'package:premiumprice/util/map_util.dart';
 
 class DefinirLocalizacaoPage extends StatefulWidget {
   const DefinirLocalizacaoPage({super.key});
@@ -32,8 +33,8 @@ class _DefinirLocalizacaoPageState extends State<DefinirLocalizacaoPage> {
         body: Stack(
           children: [
             FlutterLocationPicker(
-                initPosition: LatLong(-25.4950245, -49.4546094),
-                initZoom: 11,
+                initPosition: LatLong(MapUtil.defaultLatitude, MapUtil.defaultLongitude),
+                initZoom: MapUtil.defaultZoom,
                 minZoomLevel: 5,
                 maxZoomLevel: 18,
                 //trackMyPosition: true,

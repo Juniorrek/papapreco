@@ -6,6 +6,10 @@ import 'package:http/http.dart' as http;
 class MapUtil {//FIXME kjfhdjhfjd
   MapUtil._(); // Private constructor to prevent instantiation
 
+  static double defaultLatitude = -25.458162;
+  static double defaultLongitude = -49.3253965;
+  static double defaultZoom = 18;
+
   static Future<dynamic> reverseGeocoding(double latitude, double longitude) async {
     final http.Response response = await http.get(Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude'));
 
