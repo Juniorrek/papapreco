@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 
 class DefinirLocalizacaoPage extends StatefulWidget {
@@ -24,14 +25,18 @@ class _DefinirLocalizacaoPageState extends State<DefinirLocalizacaoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: const Text("Premium Price")),
+        appBar: AppBar(
+          title: const Text("Premium Price"),
+          automaticallyImplyLeading: false,
+        ),
         body: Stack(
           children: [
             FlutterLocationPicker(
+                initPosition: LatLong(-25.4950245, -49.4546094),
                 initZoom: 11,
                 minZoomLevel: 5,
                 maxZoomLevel: 18,
-                trackMyPosition: true,
+                //trackMyPosition: true,
                 onPicked: (pickedData) {
                   Navigator.pop(context, pickedData.latLong);
                 })

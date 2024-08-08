@@ -5,8 +5,10 @@ class Produto {
   String nome;
   String descricao;
   String preco;
+  double latitude;
+  double longitude;
 
-  Produto(this.id, this.nome, this.descricao, this.preco);
+  Produto(this.id, this.nome, this.descricao, this.preco, this.latitude, this.longitude);
 
   static Produto fromMap(Map<String, dynamic> map) {
     return Produto(
@@ -14,6 +16,8 @@ class Produto {
       map['nome'],
       map['descricao'],
       map['preco'],
+      map['latitude'],
+      map['longitude'],
     );
   }
 

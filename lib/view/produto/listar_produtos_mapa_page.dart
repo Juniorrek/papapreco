@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:premiumprice/model/produto.dart';
+import 'package:premiumprice/repositories/produto_repository.dart';
 
 class ListarProdutosMapaPage extends StatefulWidget {
-  const ListarProdutosMapaPage({super.key});
+  final String nomeProduto;
+  final double latitude;
+  final double longitude;
+
+  const ListarProdutosMapaPage(
+      {super.key,
+      required this.nomeProduto,
+      required this.latitude,
+      required this.longitude});
 
   static const String routeName = '/produtos/mapa';
 
@@ -12,14 +22,54 @@ class ListarProdutosMapaPage extends StatefulWidget {
 }
 
 class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
+  final ProdutoRepository _repository = ProdutoRepository();
+  List<Marker> _markers = <Marker>[];
+  List<Produto> _produtos = <Produto>[];
+
   @override
   void initState() {
     super.initState();
+
+    _repository.buscarPorNome(widget.nomeProduto).then((produtos) {
+        setState(() {
+            _produtos = produtos;
+
+            _markers = _gerarMarkers(_produtos);
+        });
+    });
+  }
+
+  void test() {
+    setState(() {
+      _markers = _gerarMarkers(_produtos);
+    });
   }
 
   @override
   void dispose() {
     super.dispose();
+  }
+
+  List<Marker> _gerarMarkers(List<Produto> produtos) {
+    List<Marker> markers = <Marker>[];
+
+    for (final produto in produtos) {
+      markers.add(Marker(
+          point: LatLng(produto.latitude, produto.longitude),
+          width: 180,
+          height: 180,
+          child: GestureDetector(
+              child: const Icon(
+                Icons.location_on,
+                size: 50,
+              ),
+              onTap: () {
+                print(produto.nome);
+              }
+            )));
+    }
+
+    return markers;
   }
 
   @override
@@ -46,14 +96,7 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
                   // Plenty of other options available!
                 ),
                 MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: LatLng(-25.469680, -49.235317),
-                      width: 180,
-                      height: 180,
-                      child: Icon(Icons.location_on, size: 50,),
-                    ),
-                  ],
+                  markers: _markers,
                 ),
               ],
             )

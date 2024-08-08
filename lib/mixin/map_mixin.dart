@@ -1,12 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:geolocator/geolocator.dart';
+import 'package:geolocator_linux/geolocator_linux.dart';
 import 'package:http/http.dart' as http;
+import 'package:geoclue/geoclue.dart';
 
-class MapUtil {//FIXME kjfhdjhfjd
-  MapUtil._(); // Private constructor to prevent instantiation
-
-  static Future<dynamic> reverseGeocoding(double latitude, double longitude) async {
+mixin MapMixin {
+  /*Future<dynamic> reverseGeocoding(double latitude, double longitude) async {
     final http.Response response = await http.get(Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude'));
 
     var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes));
@@ -14,26 +15,13 @@ class MapUtil {//FIXME kjfhdjhfjd
     return decodedResponse;
   }
 
-  static Future<String> reverseGeocodingString(double latitude, double longitude) async {
-    dynamic currentGeocoding = await reverseGeocoding(latitude, longitude);
+  Future<String> reverseGeocodingString(double latitude, double longitude) async {
+    dynamic currentGeocoding = reverseGeocoding(latitude, longitude);
 
-    if (currentGeocoding is Map<String, dynamic>) 
-    {
-      if (currentGeocoding['address'] != null 
-          && currentGeocoding['address']['road'] != null
-          && currentGeocoding['address']['house_number'] != null) 
-      {
-        return currentGeocoding['address']['road'] + ' ' + currentGeocoding['address']['house_number'];
-      } 
-      else
-      {
-        return currentGeocoding['display_name'];
-      }
-    } 
-    return 'Erro ao buscar localização!';
-  }
+    return currentGeocoding['address']['road'] + ' ' + currentGeocoding['address']['house_number'];
+  }*/
 
-  /*static Future<Position> currentLocation() async {
+  Future<Position?> currentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -48,9 +36,15 @@ class MapUtil {//FIXME kjfhdjhfjd
       if (permission == LocationPermission.denied) {
         return Future.error('Location permissions are denied');
       }
-    }
+    } else if (permission == LocationPermission.unableToDetermine
+              && Platform.isLinux) {
+      /*GeolocatorLinux g = GeolocatorLinux(GeoClueManager());
+      Position p = await g.getCurrentPosition();
+      return p;*/
+      return null;
 
-    if (permission == LocationPermission.deniedForever) {
+      //return Future.error('Unable to determine.');
+    } else if (permission == LocationPermission.deniedForever) {
       return Future.error(
           'Location permissions are permanently denied, we cannot request permissions.');
     }
@@ -58,5 +52,5 @@ class MapUtil {//FIXME kjfhdjhfjd
     Position p = await Geolocator.getCurrentPosition();
 
     return p;
-  }*/
+  }
 }

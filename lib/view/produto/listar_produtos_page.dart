@@ -43,13 +43,13 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
   //ENTÃO POR ENQUANTO CODIGO DUPLICADO
   /////////////////////////////////////////////////////////////
   void _setLocalizacaoAtual(double latitude, double longitude) async {
-    dynamic currentGeocoding = await MapUtil.reverseGeocoding(latitude, longitude);
+    String reverseGeocodingString = await MapUtil.reverseGeocodingString(latitude, longitude);
     setState(() {
-      _localizacaoAtual = currentGeocoding['address']['road'] + ' ' + currentGeocoding['address']['house_number'];
+      _localizacaoAtual = reverseGeocodingString;
     });
   }
 
-  _definirLocalizacao(context) async {
+  _navigateDefinirLocalizacaoPage(context) async {
       final LatLong result = await Navigator.pushNamed(context,Routes.definirLocalizacao) as LatLong;
 
       // When a BuildContext is used from a StatefulWidget, the mounted property
@@ -145,12 +145,12 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
 
                   TextButton(
                       onPressed: () {
-                          _definirLocalizacao(context);
+                          _navigateDefinirLocalizacaoPage(context);
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(_localizacaoAtual + ' (5km)'),
+                          Flexible(child: Text('$_localizacaoAtual (5km)')),
                           const Icon(Icons.arrow_drop_down)
                         ],
                       )),
@@ -161,7 +161,12 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                           icon: const Icon(Icons.map),
                           onPressed: () {
                             Navigator.pushNamed(
-                                context, Routes.listarProdutosMapa);
+                              context, Routes.listarProdutosMapa,
+                              arguments: <String, String>{
+                                "nomeProduto": _nomeProdutoController.text,
+                                "latitude": widget.latitude.toString(),
+                                "longitude": widget.longitude.toString()
+                            });
                           },
                         ),
                         ElevatedButton(
