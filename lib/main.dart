@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geolocator_linux/geolocator_linux.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
-import 'package:premiumprice/mixin/map_mixin.dart';
-import 'package:premiumprice/util/map_util.dart';
 import 'package:premiumprice/view/definir_localizacao_page.dart';
+import 'package:premiumprice/view/produto/confirmar_digitalizacao_page.dart';
+import 'package:premiumprice/view/produto/digitalizar_nota_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_mapa_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_page.dart';
+import 'package:premiumprice/lib/map_lib.dart' as map_lib;
 
 import 'routes/routes.dart';
 
@@ -32,7 +31,8 @@ class MyApp extends StatelessWidget {
         //Routes.listarProdutos: (context) => const ListarProdutosPage(),
         //paginas com parametro nao precisam ser declaradas aqui ja que estao embaixos
         //Routes.listarProdutosMapa: (context) => const ListarProdutosMapaPage(),
-        Routes.definirLocalizacao: (context) => const DefinirLocalizacaoPage()
+        Routes.definirLocalizacao: (context) => const DefinirLocalizacaoPage(),
+        Routes.digitalizarNota: (context) => const DigitalizarNotaPage()
       },
       onGenerateRoute: (settings) {
         final Map args = settings.arguments as Map<String, String>;
@@ -47,6 +47,9 @@ class MyApp extends StatelessWidget {
             nomeProduto: args["nomeProduto"],
             latitude: double.parse(args["latitude"]),
             longitude: double.parse(args["longitude"])
+          ),
+          Routes.confirmarDigitalizacao: (ctx) => ConfirmarDigitalizacaoPage(
+            urlQr: args["urlQr"]
           ),
         };
 
@@ -68,7 +71,7 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with MapMixin {
+class _MyHomePageState extends State<MyHomePage> {
   final _formKey = GlobalKey<FormState>();
 
   final _nomeProdutoController = TextEditingController();
@@ -89,9 +92,7 @@ class _MyHomePageState extends State<MyHomePage> with MapMixin {
   //ENTÃO POR ENQUANTO CODIGO DUPLICADO
   /////////////////////////////////////////////////////////////
   Future<void> _setCurrentPosition() async {
-    //Position p = await MapUtil.currentLocation();
-
-    Position? p = await currentLocation();
+    Position? p = await map_lib.currentLocation();
 
     if (p != null) {
       _setLocalizacaoAtualString(p.latitude, p.longitude);
@@ -108,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> with MapMixin {
 
   void _setLocalizacaoAtualString(double latitude, double longitude) async {
     String reverseGeocodingString =
-        await MapUtil.reverseGeocodingString(latitude, longitude);
+        await map_lib.reverseGeocodingString(latitude, longitude);
     setState(() {
       _localizacaoAtual = reverseGeocodingString;
     });
@@ -201,9 +202,18 @@ class _MyHomePageState extends State<MyHomePage> with MapMixin {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 8),
                       child: ElevatedButton(
-                          onPressed: () {}, child: const Text("Login"))),
+                          onPressed: () {
+                            Navigator.pushNamed(
+                            context, Routes.digitalizarNota);
+                          }, child: const Text("Login"))),
                   ElevatedButton(
-                      onPressed: () {}, child: const Text("Criar Conta")),
+                      onPressed: () {
+                        Navigator.pushNamed(
+                            context, Routes.confirmarDigitalizacao,
+                            arguments: <String, String>{
+                              "urlQr": "https://www.fazenda.pr.gov.br/nfce/qrcode?p=41240778116670001994650110000706859008861151|2|1|19|191.37|36424547706431514c323277326e5933526a4272497a356d31746b3d|1|1E71BE91A8A04C4D104650E2FB2AB5B14CDB91E8"
+                            });
+                      }, child: const Text("Criar Conta")),
                 ])
               ],
             )),

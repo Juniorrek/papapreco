@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:premiumprice/helper/error.dart';
 import 'package:premiumprice/model/produto.dart';
 import 'package:premiumprice/repositories/produto_repository.dart';
 import 'package:premiumprice/routes/routes.dart';
-import 'package:premiumprice/util/map_util.dart';
+import 'package:premiumprice/lib/map_lib.dart' as map_lib;
 
 class ListarProdutosPage extends StatefulWidget {
   final String nomeProduto;
@@ -43,7 +42,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
   //ENTÃO POR ENQUANTO CODIGO DUPLICADO
   /////////////////////////////////////////////////////////////
   void _setLocalizacaoAtual(double latitude, double longitude) async {
-    String reverseGeocodingString = await MapUtil.reverseGeocodingString(latitude, longitude);
+    String reverseGeocodingString = await map_lib.reverseGeocodingString(latitude, longitude);
     setState(() {
       _localizacaoAtual = reverseGeocodingString;
     });

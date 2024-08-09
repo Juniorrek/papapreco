@@ -4,8 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:premiumprice/model/produto.dart';
 import 'package:premiumprice/repositories/produto_repository.dart';
 import 'dart:math';
-
-import 'package:premiumprice/util/map_util.dart';
+import 'package:premiumprice/lib/map_lib.dart' as map_lib;
 
 class ListarProdutosMapaPage extends StatefulWidget {
   final String nomeProduto;
@@ -44,7 +43,7 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
         });
 
         LatLng centroide = _calcularCentroideProdutos(_produtos);
-        _mapController.move(centroide, MapUtil.defaultZoom);
+        _mapController.move(centroide, map_lib.defaultZoom);
     });
   }
 
@@ -94,8 +93,8 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
             FlutterMap(
                 mapController: _mapController,
               options: MapOptions(
-                initialCenter: LatLng(MapUtil.defaultLatitude, MapUtil.defaultLongitude),
-                initialZoom: MapUtil.defaultZoom,
+                initialCenter: LatLng(map_lib.defaultLatitude, map_lib.defaultLongitude),
+                initialZoom: map_lib.defaultZoom,
                 cameraConstraint: CameraConstraint.contain(
                   bounds: LatLngBounds(
                     const LatLng(-90, -180),

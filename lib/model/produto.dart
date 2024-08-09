@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 class Produto {
-  int id;
+  int? id;
   String nome;
   String descricao;
   String preco;
@@ -9,6 +9,7 @@ class Produto {
   double longitude;
 
   Produto(this.id, this.nome, this.descricao, this.preco, this.latitude, this.longitude);
+  Produto.novo(this.nome, this.descricao, this.preco, this.latitude, this.longitude);
 
   static Produto fromMap(Map<String, dynamic> map) {
     return Produto(
