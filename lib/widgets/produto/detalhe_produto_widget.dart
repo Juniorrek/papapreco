@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:premiumprice/model/produto.dart';
+import 'package:premiumprice/routes/routes.dart';
 
 class DetalheProdutoWidget extends StatelessWidget {
   const DetalheProdutoWidget({
@@ -35,12 +36,22 @@ class DetalheProdutoWidget extends StatelessWidget {
             Text(produto.nome),
             Text(produto.localizacao ?? ""),
             Text('R\$${produto.preco}'),
-            const Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-              Icon(Icons.map),
-              Icon(Icons.edit)
-            ],)
+                IconButton(
+                  icon: const Icon(Icons.pin_drop),
+                  onPressed: () {
+                    Navigator.pushNamed(context, Routes.listarProdutosMapa,
+                        arguments: <String, Object>{
+                          "produtos": List.filled(1, produto),
+                          "fromDetail": true
+                          });
+                  },
+                ),
+                Icon(Icons.edit)
+              ],
+            )
           ],
         ))
       ],

@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
-double defaultLatitude = -25.458162;
-double defaultLongitude = -49.3253965;
-double defaultZoom = 15;
+double defaultLatitude = -25.4284;
+double defaultLongitude = -49.2733;
+double defaultZoom = 18;
 
 Future<dynamic> geocoding(String query) async {
   final http.Response response = await http.get(Uri.parse(
@@ -36,6 +36,12 @@ Future<String> reverseGeocodingString(double latitude, double longitude) async {
       return currentGeocoding['address']['road'] +
           ' ' +
           currentGeocoding['address']['house_number'];
+    } else if (currentGeocoding['address'] != null &&
+        currentGeocoding['address']['road'] != null &&
+        currentGeocoding['address']['neighbourhood'] != null) {
+      return currentGeocoding['address']['road'] +
+          ' ' +
+          currentGeocoding['address']['neighbourhood'];
     } else {
       return currentGeocoding['display_name'];
     }
@@ -52,6 +58,9 @@ Future<String> reverseGeocodingShop(double latitude, double longitude) async {
       return currentGeocoding['address']['shop'];
     } else if (currentGeocoding['class'] == 'shop' && currentGeocoding['name'] != null) {
       return currentGeocoding['name'];
+    } else if (currentGeocoding['address'] != null &&
+        currentGeocoding['address']['road'] != null) {
+      return currentGeocoding['address']['road'];
     } else {
       return currentGeocoding['display_name'];
     }

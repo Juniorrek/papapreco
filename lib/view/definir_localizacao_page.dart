@@ -3,7 +3,10 @@ import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 
 class DefinirLocalizacaoPage extends StatefulWidget {
-  const DefinirLocalizacaoPage({super.key});
+  final double latitude;
+  final double longitude;
+  
+  const DefinirLocalizacaoPage({super.key, required this.latitude, required this.longitude});
 
   static const String routeName = '/definir-localizacao';
 
@@ -32,7 +35,7 @@ class _DefinirLocalizacaoPageState extends State<DefinirLocalizacaoPage> {
         body: Stack(
           children: [
             FlutterLocationPicker(
-                initPosition: LatLong(map_lib.defaultLatitude, map_lib.defaultLongitude),
+                initPosition: LatLong(widget.latitude, widget.longitude),
                 initZoom: map_lib.defaultZoom,
                 minZoomLevel: 5,
                 maxZoomLevel: 18,

@@ -11,8 +11,10 @@ import 'package:shimmer/shimmer.dart';
 
 class ListarProdutosMapaPage extends StatefulWidget {
   final List<Produto> produtos;
+  final bool fromDetail;
 
-  const ListarProdutosMapaPage({super.key, required this.produtos});
+  const ListarProdutosMapaPage(
+      {super.key, required this.produtos, required this.fromDetail});
 
   static const String routeName = '/produtos/mapa';
 
@@ -93,82 +95,81 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Text("Preço: R\$${produto.preco}")
-                  ])
+                  Row(children: [Text("Preço: R\$${produto.preco}")])
                 ],
               ),
               actions: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [TextButton(
-                    child: const Text("Detalhes"),
-                    onPressed: () {
-                      Navigator.pushNamed(
-                        context, Routes.detalheProduto,
-                        arguments: <String, Object>{
-                          "idProduto": widget.produtos[index].id!
-                      });
-                    }),
+                  children: [
+                    Builder(builder: (context) {
+                      if (widget.fromDetail) return const SizedBox.shrink();
 
-                TextButton(
-                    child: const Text("OK"),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    })],)
-                
+                      return TextButton(
+                          child: const Text("Detalhes"),
+                          onPressed: () {
+                            Navigator.popAndPushNamed(context, Routes.detalheProduto,
+                                arguments: <String, Object>{
+                                  "idProduto": widget.produtos[index].id!
+                                });
+                          });
+                    }),
+                    TextButton(
+                        child: const Text("OK"),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        })
+                  ],
+                )
               ]);
         });
   }
 
   @override
   Widget build(BuildContext context) {
-    if(!isLoading) {
+    if (!isLoading) {
       return Scaffold(
-              appBar: AppBar(title: const Text("Premium Price")),
-              body: Stack(
-                children: [
-                  FlutterMap(
-                    mapController: _mapController,
-                    options: MapOptions(
-                      initialCenter: LatLng(widget.produtos[0].latitude,
-                          widget.produtos[0].longitude),
-                      initialZoom: map_lib.defaultZoom,
-                      cameraConstraint: CameraConstraint.contain(
-                        bounds: LatLngBounds(
-                          const LatLng(-90, -180),
-                          const LatLng(90, 180),
-                        ),
-                      ),
+          appBar: AppBar(title: const Text("Premium Price")),
+          body: Stack(
+            children: [
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: LatLng(widget.produtos[0].latitude,
+                      widget.produtos[0].longitude),
+                  initialZoom: map_lib.defaultZoom,
+                  cameraConstraint: CameraConstraint.contain(
+                    bounds: LatLngBounds(
+                      const LatLng(-90, -180),
+                      const LatLng(90, 180),
                     ),
-                    children: [
-                      openStreetMapTileLayer,
-                      MarkerLayer(
-                        markers: _markers,
-                      ),
-                    ],
-                  )
+                  ),
+                ),
+                children: [
+                  openStreetMapTileLayer,
+                  MarkerLayer(
+                    markers: _markers,
+                  ),
                 ],
-              ));
+              )
+            ],
+          ));
     } else {
       return Scaffold(
-        appBar: AppBar(title: const Text("Premium Price")),
-        body: Stack(
-          children: [
-            _loadingMap()
-          ],
-        ));
+          appBar: AppBar(title: const Text("Premium Price")),
+          body: Stack(
+            children: [_loadingMap()],
+          ));
     }
   }
 
   Shimmer _loadingMap() {
     return Shimmer.fromColors(
-      baseColor: Colors.grey.shade300,
-      highlightColor: Colors.grey[100]!,
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: Colors.black
-      ));
+        baseColor: Colors.grey.shade300,
+        highlightColor: Colors.grey[100]!,
+        child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.black));
   }
 }

@@ -8,6 +8,7 @@ import 'package:premiumprice/view/produto/digitalizar_nota_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_mapa_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_page.dart';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
+import 'package:shimmer/shimmer.dart';
 
 import 'routes/routes.dart';
 
@@ -32,27 +33,28 @@ class MyApp extends StatelessWidget {
         //Routes.listarProdutos: (context) => const ListarProdutosPage(),
         //paginas com parametro nao precisam ser declaradas aqui ja que estao embaixos
         //Routes.listarProdutosMapa: (context) => const ListarProdutosMapaPage(),
-        Routes.definirLocalizacao: (context) => const DefinirLocalizacaoPage(),
+        //Routes.definirLocalizacao: (context) => const DefinirLocalizacaoPage(),
         Routes.digitalizarNota: (context) => const DigitalizarNotaPage()
       },
       onGenerateRoute: (settings) {
         final Map args = settings.arguments as Map<String, Object>;
 
         Map routes = <String, WidgetBuilder>{
+          Routes.definirLocalizacao: (ctx) => DefinirLocalizacaoPage(
+              latitude: args["latitude"], longitude: args["longitude"]),
           Routes.listarProdutos: (ctx) => ListarProdutosPage(
-            nomeProduto: args["nomeProduto"],
-            latitude: args["latitude"],
-            longitude: args["longitude"]
-          ),
-          Routes.detalheProduto: (ctx) => DetalheProdutoPage(
-            idProduto: args["idProduto"]
-          ),
+              nomeProduto: args["nomeProduto"],
+              latitude: args["latitude"],
+              longitude: args["longitude"],
+              localizacao: args["localizacao"]),
+          Routes.detalheProduto: (ctx) =>
+              DetalheProdutoPage(idProduto: args["idProduto"]),
           Routes.listarProdutosMapa: (ctx) => ListarProdutosMapaPage(
-            produtos: args["produtos"]
-          ),
-          Routes.confirmarDigitalizacao: (ctx) => ConfirmarDigitalizacaoPage(
-            urlQr: args["urlQr"]
-          ),
+                produtos: args["produtos"],
+                fromDetail: args["fromDetail"],
+              ),
+          Routes.confirmarDigitalizacao: (ctx) =>
+              ConfirmarDigitalizacaoPage(urlQr: args["urlQr"]),
         };
 
         WidgetBuilder builder = routes[settings.name];
@@ -79,7 +81,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final _nomeProdutoController = TextEditingController();
 
   String _localizacaoAtual = '';
-
   double? latitude = null;
   double? longitude = null;
 
@@ -103,9 +104,15 @@ class _MyHomePageState extends State<MyHomePage> {
         longitude = p.longitude;
       });
     } else {
+      _setLocalizacaoAtualString(
+          map_lib.defaultLatitude, map_lib.defaultLongitude);
       setState(() {
-        _localizacaoAtual = "Localização indisponível!";
+        latitude = map_lib.defaultLatitude;
+        longitude = map_lib.defaultLongitude;
       });
+      /*setState(() {
+        _localizacaoAtual = "Localização indisponível!";
+      });*/
     }
   }
 
@@ -117,10 +124,18 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  _navigateDefinirLocalizacaoPage(context) async {
-    final LatLong result =
-        await Navigator.pushNamed(context, Routes.definirLocalizacao)
-            as LatLong;
+  Future<void> _navigateDefinirLocalizacaoPage(context) async {
+    if (latitude == null) {
+      latitude = map_lib.defaultLatitude;
+      longitude = map_lib.defaultLongitude;
+    }
+
+    final LatLong result = await Navigator.pushNamed(
+        context, Routes.definirLocalizacao,
+        arguments: <String, Object>{
+          "latitude": latitude!,
+          "longitude": longitude!,
+        }) as LatLong;
 
     // When a BuildContext is used from a StatefulWidget, the mounted property
     // must be checked after an asynchronous gap.
@@ -134,6 +149,30 @@ class _MyHomePageState extends State<MyHomePage> {
     _setLocalizacaoAtualString(result.latitude, result.longitude);
   }
   /////////////////////////////////////////////////////////////
+
+  Future<void> _navigateListarProdutosPage(context) async {
+    if (_formKey.currentState!.validate() && latitude != null) {
+      final Map result = await Navigator.pushNamed(context, Routes.listarProdutos,
+          arguments: <String, Object>{
+            "nomeProduto": _nomeProdutoController.text,
+            "latitude": latitude!,
+            "longitude": longitude!,
+            "localizacao": _localizacaoAtual
+          }) as Map<String, Object>;
+
+      
+      // When a BuildContext is used from a StatefulWidget, the mounted property
+      // must be checked after an asynchronous gap.
+      if (!context.mounted) return;
+
+      setState(() {
+        _nomeProdutoController.text = result?['nomeProduto'];
+        latitude = result?['latitude'];
+        longitude = result?['longitude'];
+        _localizacaoAtual = result?['localizacao'];
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -184,18 +223,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       )),
                   const SizedBox(height: 30),
                   ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate() &&
-                          latitude != null) {
-                        Navigator.pushNamed(
-                            context, Routes.listarProdutos,
-                            arguments: <String, Object>{
-                              "nomeProduto": _nomeProdutoController.text,
-                              "latitude": latitude!,
-                              "longitude": longitude!
-                            });
-                      }
-                    },
+                    onPressed: () => _navigateListarProdutosPage(context),
                     child: const Text('Pesquisar'),
                   )
                 ])),
@@ -206,16 +234,19 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: ElevatedButton(
                           onPressed: () {
                             Navigator.pushNamed(
-                            context, Routes.digitalizarNota);
-                          }, child: const Text("Login"))),
+                                context, Routes.digitalizarNota);
+                          },
+                          child: const Text("Login"))),
                   ElevatedButton(
                       onPressed: () {
                         Navigator.pushNamed(
                             context, Routes.confirmarDigitalizacao,
                             arguments: <String, String>{
-                              "urlQr": "https://www.fazenda.pr.gov.br/nfce/qrcode?p=41240778116670001994650110000706859008861151|2|1|19|191.37|36424547706431514c323277326e5933526a4272497a356d31746b3d|1|1E71BE91A8A04C4D104650E2FB2AB5B14CDB91E8"
+                              "urlQr":
+                                  "https://www.fazenda.pr.gov.br/nfce/qrcode?p=41240778116670001994650110000706859008861151|2|1|19|191.37|36424547706431514c323277326e5933526a4272497a356d31746b3d|1|1E71BE91A8A04C4D104650E2FB2AB5B14CDB91E8"
                             });
-                      }, child: const Text("Criar Conta")),
+                      },
+                      child: const Text("Criar Conta")),
                 ])
               ],
             )),

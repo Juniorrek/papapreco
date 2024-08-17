@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:premiumprice/helper/error.dart';
@@ -10,8 +11,14 @@ class ListarProdutosPage extends StatefulWidget {
   final String nomeProduto;
   final double latitude;
   final double longitude;
+  final String localizacao;
 
-  const ListarProdutosPage({super.key, required this.nomeProduto, required this.latitude, required this.longitude });
+  const ListarProdutosPage(
+      {super.key,
+      required this.nomeProduto,
+      required this.latitude,
+      required this.longitude,
+      required this.localizacao});
 
   static const String routeName = '/produtos';
 
@@ -26,6 +33,8 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
   List<Produto> _lista = <Produto>[];
 
   String _localizacaoAtual = '';
+  late double _latitude;
+  late double _longitude;
 
   @override
   void initState() {
@@ -35,27 +44,41 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
 
     _refreshList();
 
-    _setLocalizacaoAtual(widget.latitude, widget.longitude);
+    _latitude = widget.latitude;
+    _longitude = widget.longitude;
+    setState(() {
+      _localizacaoAtual = widget.localizacao;
+    });
+    //_setLocalizacaoAtual(widget.latitude, widget.longitude);
   }
 
   //NÃO CONSIGO JOGAR NA UTIL PQ PRA CHAMAR NA INITSTATE PRECISA SER ASYNC
   //ENTÃO POR ENQUANTO CODIGO DUPLICADO
   /////////////////////////////////////////////////////////////
   void _setLocalizacaoAtual(double latitude, double longitude) async {
-    String reverseGeocodingString = await map_lib.reverseGeocodingString(latitude, longitude);
+    String reverseGeocodingString =
+        await map_lib.reverseGeocodingString(latitude, longitude);
     setState(() {
       _localizacaoAtual = reverseGeocodingString;
     });
   }
 
   _navigateDefinirLocalizacaoPage(context) async {
-      final LatLong result = await Navigator.pushNamed(context,Routes.definirLocalizacao) as LatLong;
+    final LatLong result = await Navigator.pushNamed(
+        context, Routes.definirLocalizacao,
+        arguments: <String, Object>{
+          "latitude": _latitude,
+          "longitude": _longitude,
+        }) as LatLong;
 
-      // When a BuildContext is used from a StatefulWidget, the mounted property
-      // must be checked after an asynchronous gap.
-      if (!context.mounted) return;
+    // When a BuildContext is used from a StatefulWidget, the mounted property
+    // must be checked after an asynchronous gap.
+    if (!context.mounted) return;
 
-      _setLocalizacaoAtual(result.latitude, result.longitude);
+    _latitude = result.latitude;
+    _longitude = result.longitude;
+
+    _setLocalizacaoAtual(result.latitude, result.longitude);
   }
   /////////////////////////////////////////////////////////////
 
@@ -93,11 +116,8 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
       title: Text(p.nome),
       subtitle: Text('R\$ ${p.preco}'),
       onTap: () {
-        Navigator.pushNamed(
-          context, Routes.detalheProduto,
-          arguments: <String, Object>{
-            "idProduto": _lista[index].id!
-        });
+        Navigator.pushNamed(context, Routes.detalheProduto,
+            arguments: <String, Object>{"idProduto": _lista[index].id!});
       },
       trailing: PopupMenuButton(
         itemBuilder: (context) {
@@ -122,6 +142,17 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
     return Scaffold(
         appBar: AppBar(
           title: const Text("Premium Price"),
+          leading: BackButton(
+              onPressed: () => Navigator.pop(context, <String, Object>{
+                    "nomeProduto": _nomeProdutoController.text,
+                    "latitude": _latitude,
+                    "longitude": _longitude,
+                    "localizacao": _localizacaoAtual
+                  })) /*IconButton(
+    icon: const Icon(Icons.arrow_back, color: Colors.black),
+    onPressed: () => Navigator.of(context).pop(),
+  )*/
+          ,
           //automaticallyImplyLeading: false,
         ),
         body: Column(
@@ -145,18 +176,17 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                             return null;
                           },
                         )),
-
-                  TextButton(
-                      onPressed: () {
+                    TextButton(
+                        onPressed: () {
                           _navigateDefinirLocalizacaoPage(context);
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(child: Text('$_localizacaoAtual (5km)')),
-                          const Icon(Icons.arrow_drop_down)
-                        ],
-                      )),
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Flexible(child: Text('$_localizacaoAtual (5km)')),
+                            const Icon(Icons.arrow_drop_down)
+                          ],
+                        )),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -164,10 +194,11 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                           icon: const Icon(Icons.map),
                           onPressed: () {
                             Navigator.pushNamed(
-                              context, Routes.listarProdutosMapa,
-                              arguments: <String, Object>{
-                                "produtos": _lista
-                            });
+                                context, Routes.listarProdutosMapa,
+                                arguments: <String, Object>{
+                                  "produtos": _lista,
+                                  "fromDetail": false
+                                });
                           },
                         ),
                         ElevatedButton(
