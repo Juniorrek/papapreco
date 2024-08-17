@@ -4,7 +4,7 @@ import 'package:premiumprice/helper/error.dart';
 import 'package:premiumprice/model/produto.dart';
 import 'package:premiumprice/repositories/produto_repository.dart';
 import 'package:premiumprice/routes/routes.dart';
-import 'package:premiumprice/lib/map_lib.dart' as map_lib;
+import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 
 class ListarProdutosPage extends StatefulWidget {
   final String nomeProduto;
@@ -93,7 +93,11 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
       title: Text(p.nome),
       subtitle: Text('R\$ ${p.preco}'),
       onTap: () {
-        //_showItem(context, index);
+        Navigator.pushNamed(
+          context, Routes.detalheProduto,
+          arguments: <String, Object>{
+            "idProduto": _lista[index].id!
+        });
       },
       trailing: PopupMenuButton(
         itemBuilder: (context) {
@@ -161,10 +165,8 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                           onPressed: () {
                             Navigator.pushNamed(
                               context, Routes.listarProdutosMapa,
-                              arguments: <String, String>{
-                                "nomeProduto": _nomeProdutoController.text,
-                                "latitude": widget.latitude.toString(),
-                                "longitude": widget.longitude.toString()
+                              arguments: <String, Object>{
+                                "produtos": _lista
                             });
                           },
                         ),

@@ -3,10 +3,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:premiumprice/view/definir_localizacao_page.dart';
 import 'package:premiumprice/view/produto/confirmar_digitalizacao_page.dart';
+import 'package:premiumprice/view/produto/detalhe_produto_page.dart';
 import 'package:premiumprice/view/produto/digitalizar_nota_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_mapa_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_page.dart';
-import 'package:premiumprice/lib/map_lib.dart' as map_lib;
+import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 
 import 'routes/routes.dart';
 
@@ -35,18 +36,19 @@ class MyApp extends StatelessWidget {
         Routes.digitalizarNota: (context) => const DigitalizarNotaPage()
       },
       onGenerateRoute: (settings) {
-        final Map args = settings.arguments as Map<String, String>;
+        final Map args = settings.arguments as Map<String, Object>;
 
         Map routes = <String, WidgetBuilder>{
           Routes.listarProdutos: (ctx) => ListarProdutosPage(
             nomeProduto: args["nomeProduto"],
-            latitude: double.parse(args["latitude"]),
-            longitude: double.parse(args["longitude"])
+            latitude: args["latitude"],
+            longitude: args["longitude"]
+          ),
+          Routes.detalheProduto: (ctx) => DetalheProdutoPage(
+            idProduto: args["idProduto"]
           ),
           Routes.listarProdutosMapa: (ctx) => ListarProdutosMapaPage(
-            nomeProduto: args["nomeProduto"],
-            latitude: double.parse(args["latitude"]),
-            longitude: double.parse(args["longitude"])
+            produtos: args["produtos"]
           ),
           Routes.confirmarDigitalizacao: (ctx) => ConfirmarDigitalizacaoPage(
             urlQr: args["urlQr"]
@@ -187,10 +189,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           latitude != null) {
                         Navigator.pushNamed(
                             context, Routes.listarProdutos,
-                            arguments: <String, String>{
+                            arguments: <String, Object>{
                               "nomeProduto": _nomeProdutoController.text,
-                              "latitude": latitude.toString(),
-                              "longitude": longitude.toString()
+                              "latitude": latitude!,
+                              "longitude": longitude!
                             });
                       }
                     },

@@ -2,15 +2,36 @@ import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:premiumprice/model/produto.dart';
 import 'package:premiumprice/rest/api.dart';
-import 'package:premiumprice/lib/map_lib.dart' as map_lib;
+import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 
 class ProdutoRest {
-  Future<List<Produto>> buscarPorNome(String nome) async {
+  Future<Produto> buscarPorId(int id) async {
     final http.Response response =
-        await http.get(Uri.http(API.endpoint, "produtos/$nome"));
+        await http.get(Uri.http(API.endpoint, "produtos/$id"));
 
     if (response.statusCode == 200) {
-      return Produto.fromJsonList(response.body);
+      Produto p = Produto.fromJson(response.body);
+      p.localizacao = await map_lib.reverseGeocodingShop(p.latitude, p.longitude);
+      return p;
+    } else {
+      throw Exception('Erro buscando o produto por id.');
+    }
+  }
+
+  Future<List<Produto>> buscarPorNome(String nome) async {
+    final http.Response response =
+        await http.get(Uri.http(API.endpoint, "produtos/nome/$nome"));
+
+    if (response.statusCode == 200) {
+      List<Produto> produtos = Produto.fromJsonList(response.body);
+
+      //TODO: Melhorar, pode ficar lento
+      // LIMITAR A QUANTIDADE OU VERIFICAR SE NO BACK NAO É MELHOR
+      /*for (Produto p in produtos) {
+        p.localizacao = await map_lib.reverseGeocodingShop(p.latitude, p.longitude);
+      }*/
+
+      return produtos;
     } else {
       throw Exception('Erro buscando os produtos por nome.');
     }

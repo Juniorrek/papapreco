@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 
 double defaultLatitude = -25.458162;
 double defaultLongitude = -49.3253965;
-double defaultZoom = 18;
+double defaultZoom = 15;
 
 Future<dynamic> geocoding(String query) async {
   final http.Response response = await http.get(Uri.parse(
@@ -36,6 +36,22 @@ Future<String> reverseGeocodingString(double latitude, double longitude) async {
       return currentGeocoding['address']['road'] +
           ' ' +
           currentGeocoding['address']['house_number'];
+    } else {
+      return currentGeocoding['display_name'];
+    }
+  }
+  return 'Erro ao buscar localização!';
+}
+
+Future<String> reverseGeocodingShop(double latitude, double longitude) async {
+  dynamic currentGeocoding = await reverseGeocoding(latitude, longitude);
+
+  if (currentGeocoding is Map<String, dynamic>) {
+    if (currentGeocoding['address'] != null &&
+        currentGeocoding['address']['shop'] != null) {
+      return currentGeocoding['address']['shop'];
+    } else if (currentGeocoding['class'] == 'shop' && currentGeocoding['name'] != null) {
+      return currentGeocoding['name'];
     } else {
       return currentGeocoding['display_name'];
     }

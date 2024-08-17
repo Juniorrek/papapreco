@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
-import 'package:premiumprice/lib/map_lib.dart' as map_lib;
+import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 
 class DefinirLocalizacaoPage extends StatefulWidget {
   const DefinirLocalizacaoPage({super.key});

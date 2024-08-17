@@ -4,6 +4,10 @@ import 'package:premiumprice/rest/produto_rest.dart';
 class ProdutoRepository {
   final ProdutoRest api = ProdutoRest();
 
+  Future<Produto> buscarPorId(int id) async {
+    return await api.buscarPorId(id);
+  }
+
   Future<List<Produto>> buscarPorNome(String nome) async {
     return await api.buscarPorNome(nome);
   }
