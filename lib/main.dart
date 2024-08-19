@@ -5,6 +5,7 @@ import 'package:premiumprice/view/definir_localizacao_page.dart';
 import 'package:premiumprice/view/produto/confirmar_digitalizacao_page.dart';
 import 'package:premiumprice/view/produto/detalhe_produto_page.dart';
 import 'package:premiumprice/view/produto/digitalizar_nota_page.dart';
+import 'package:premiumprice/view/produto/filtrar_produtos_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_mapa_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_page.dart';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
@@ -53,6 +54,14 @@ class MyApp extends StatelessWidget {
                 produtos: args["produtos"],
                 fromDetail: args["fromDetail"],
               ),
+          Routes.filtrarProdutos: (ctx) => FiltrarProdutosPage(
+              nomeProduto: args["nomeProduto"],
+              latitude: args["latitude"],
+              longitude: args["longitude"],
+              localizacao: args["localizacao"],
+              distancia: args["distancia"],
+              precoMin: args["precoMin"],
+              precoMax: args["precoMax"]),
           Routes.confirmarDigitalizacao: (ctx) =>
               ConfirmarDigitalizacaoPage(urlQr: args["urlQr"]),
         };
@@ -166,10 +175,10 @@ class _MyHomePageState extends State<MyHomePage> {
       if (!context.mounted) return;
 
       setState(() {
-        _nomeProdutoController.text = result?['nomeProduto'];
-        latitude = result?['latitude'];
-        longitude = result?['longitude'];
-        _localizacaoAtual = result?['localizacao'];
+        _nomeProdutoController.text = result['nomeProduto'];
+        latitude = result['latitude'];
+        longitude = result['longitude'];
+        _localizacaoAtual = result['localizacao'];
       });
     }
   }

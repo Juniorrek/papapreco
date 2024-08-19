@@ -29,12 +29,17 @@ class ListarProdutosPage extends StatefulWidget {
 class _ListarProdutosPageState extends State<ListarProdutosPage> {
   final _formKey = GlobalKey<FormState>();
   final _nomeProdutoController = TextEditingController();
+  ProdutoRepository _repository = ProdutoRepository();
 
   List<Produto> _lista = <Produto>[];
 
   String _localizacaoAtual = '';
   late double _latitude;
   late double _longitude;
+
+  double _distancia = 5.0;
+  double _precoMin = 0.0;
+  double _precoMax = 999999.0;
 
   @override
   void initState() {
@@ -98,8 +103,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
     List<Produto> tempLista = <Produto>[];
 
     try {
-      ProdutoRepository repository = ProdutoRepository();
-      tempLista = await repository.buscarPorNome(_nomeProdutoController.text);
+      tempLista = await _repository.buscarPorNome(_nomeProdutoController.text);
     } catch (exception) {
       showError(
           context, "Erro obtendo lista de produtos", exception.toString());
@@ -135,6 +139,50 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
         },
       ),
     );
+  }
+
+  Future<void> _navigateFiltrarProdutosPage(context) async {
+    final Map result = await Navigator.pushNamed(context, Routes.filtrarProdutos,
+        arguments: <String, Object>{
+          "nomeProduto": _nomeProdutoController.text,
+          "latitude": _latitude,
+          "longitude": _longitude,
+          "localizacao": _localizacaoAtual,
+          "distancia": _distancia,
+          "precoMin": _precoMin,
+          "precoMax": _precoMax
+        }) as Map<String, Object>;
+
+    
+    // When a BuildContext is used from a StatefulWidget, the mounted property
+    // must be checked after an asynchronous gap.
+    if (!context.mounted) return;
+
+    List<Produto> tempLista = <Produto>[];
+
+    try {
+      tempLista = await _repository.filtrar(result['nomeProduto'], 
+                                          result['latitude'],
+                                          result['longitude'],
+                                          result['distancia'],
+                                          result['precoMin'], 
+                                          result['precoMax']);
+    } catch (exception) {
+      showError(
+          context, "Erro filtrando lista de produtos", exception.toString());
+    }
+    setState(() {
+        _nomeProdutoController.text = result['nomeProduto'];
+        _latitude = result['latitude'];
+        _longitude = result['longitude'];
+        _localizacaoAtual = result['localizacao'];
+
+        _distancia = result['distancia'];
+        _precoMin = result['precoMin'];
+        _precoMax = result['precoMax'];
+        
+        _lista = tempLista;
+    });
   }
 
   @override
@@ -211,7 +259,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.filter_alt),
-                          onPressed: () {},
+                          onPressed: () => _navigateFiltrarProdutosPage(context),
                         ),
                       ],
                     ),

@@ -83,8 +83,8 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
       ),
       onTap: () {
         Navigator.pushNamed(context, Routes.detalheProduto,
-            arguments: <String, String>{
-              "idProduto": _outrosProdutos[index].id.toString()
+            arguments: <String, Object>{
+              "idProduto": _outrosProdutos[index].id!
             });
       },
       /*trailing: PopupMenuButton(
@@ -146,6 +146,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                     ),
                   );
                 }),
+            const SizedBox(height: 10),
             const Text("Outros estabelecimentos"),
             Expanded(
                 child: ListView.builder(

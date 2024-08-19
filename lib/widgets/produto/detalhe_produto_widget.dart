@@ -29,7 +29,7 @@ class DetalheProdutoWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _buildImage(),
+        //_buildImage(),
         Expanded(
             child: Column(
           children: [

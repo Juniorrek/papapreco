@@ -12,6 +12,10 @@ class ProdutoRepository {
     return await api.buscarPorNome(nome);
   }
 
+  Future<List<Produto>> filtrar(String nome, double latitude, double longitude, double distancia, double precoMin, double precoMax) async {
+    return await api.filtrar(nome, latitude, longitude, distancia, precoMin, precoMax);
+  }
+
   Future<List<Produto>> buscarPorUrlQrNFCeFazenda(String urlQr) async {
     return await api.buscarPorUrlQrNFCeFazenda(urlQr);
   }

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:premiumprice/model/produto.dart';
@@ -37,6 +38,22 @@ class ProdutoRest {
     }
   }
 
+
+
+  Future<List<Produto>> filtrar(String nome, double latitude, double longitude, double distancia, double precoMin, double precoMax) async {
+    Uri t = Uri.parse("${API.endpoint}/produtos/filtrar?nome=$nome&latitude=$latitude&longitude=$longitude&distancia=$distancia&precoMin=$precoMin&precoMax=$precoMax");
+    final http.Response response =
+        await http.get(Uri.parse("http://${API.endpoint}/produtos/filtrar?nome=$nome&latitude=$latitude&longitude=$longitude&distancia=$distancia&precoMin=$precoMin&precoMax=$precoMax"));
+
+    if (response.statusCode == 200) {
+      List<Produto> produtos = Produto.fromJsonList(response.body);
+
+      return produtos;
+    } else {
+      throw Exception('Erro filtrando os produtos.');
+    }
+  }
+
   Future<List<Produto>> buscarPorUrlQrNFCeFazenda(String urlQr) async {
     final http.Response response = await http.get(Uri.parse(urlQr));
 
@@ -61,10 +78,12 @@ class ProdutoRest {
           produtos.add(Produto.novo(
               tr.getElementsByClassName("txtTit2").first.text,
               "",
-              exp
+              Decimal.parse(exp
                   .firstMatch(
                       tr.getElementsByClassName("RvlUnit").first.text)![0]!
-                  .replaceAll(",", "."),
+                  .replaceAll(",", ".")
+              )
+              ,
               lat,
               lon));
         }

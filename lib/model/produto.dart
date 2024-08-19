@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:decimal/decimal.dart';
+
 class Produto {
   int? id;
   String nome;
   String descricao;
-  String preco;
+  Decimal preco;
   double latitude;
   double longitude;
   String? localizacao;
@@ -27,7 +29,7 @@ class Produto {
       map['id'],
       map['nome'],
       map['descricao'],
-      map['preco'],
+      Decimal.parse(map['preco'].toString()),
       map['latitude'],
       map['longitude'],
     );
