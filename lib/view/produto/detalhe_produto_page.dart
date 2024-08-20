@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:premiumprice/helper/error.dart';
+import 'package:premiumprice/helper/success.dart';
 import 'package:premiumprice/model/produto.dart';
+import 'package:premiumprice/model/voto_usuario_produto.dart';
 import 'package:premiumprice/repositories/produto_repository.dart';
+import 'package:premiumprice/repositories/voto_usuario_produto_repository.dart';
 import 'package:premiumprice/routes/routes.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -20,11 +23,15 @@ class DetalheProdutoPage extends StatefulWidget {
 class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
   final DateFormat formatter = DateFormat('dd/MM/yyyy – kk:mm');
   final ProdutoRepository _repository = ProdutoRepository();
+  final VotoUsuarioProdutoRepository _votoRepository =
+      VotoUsuarioProdutoRepository();
   Future<Produto>? _produto;
 
   List<Produto> _historicoProduto = <Produto>[];
 
   bool _isLoading = false;
+
+  final int IDUSUARIOGAMBI = 7;
 
   @override
   void initState() {
@@ -40,7 +47,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
 
   void _buscarProduto(int idProduto) async {
     setState(() {
-    _isLoading = true;
+      _isLoading = true;
     });
     try {
       //await Future.delayed(const Duration(seconds: 1));
@@ -49,19 +56,21 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
           _produto = Future.value(produto);
         });
 
-        _buscarHistoricoProduto(produto.nome, produto.latitude, produto.longitude);
+        _buscarHistoricoProduto(
+            produto.nome, produto.latitude, produto.longitude);
       });
     } catch (exception) {
       showError(context, "Erro buscando produto", exception.toString());
     }
   }
 
-  void _buscarHistoricoProduto(String nome, double latitude, double longitude) async {
+  void _buscarHistoricoProduto(
+      String nome, double latitude, double longitude) async {
     List<Produto> tempList = <Produto>[];
 
     try {
       tempList = await _repository.historico(nome, latitude, longitude);
-      _produto?.then((p) {
+      await _produto?.then((p) {
         tempList.removeWhere((pp) => pp.id == p.id);
       });
 
@@ -75,6 +84,30 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
     }
   }
 
+  Future<void> _votar(Produto produto, int usuarioId, bool voto) async {
+    try {
+      VotoUsuarioProduto v;
+      if (!produto.usuarioJaVotou(IDUSUARIOGAMBI)) {
+        v = await _votoRepository.votar(produto.id!, usuarioId, voto);
+
+        Navigator.of(context).pop();
+
+        showSuccess(context, "Voto realizado com sucesso");
+      } else {
+        v = await _votoRepository.mudarVoto(produto.id!, usuarioId, voto);
+
+        Navigator.of(context).pop();
+
+        showSuccess(context, "Voto alterado com sucesso");
+      }
+
+      _buscarProduto(widget.idProduto);
+    } catch (exception) {
+      Navigator.of(context).pop();
+      showError(context, "Já votou nesse produto", exception.toString());
+    }
+  }
+
   ListTile _buildItem(BuildContext context, int index) {
     Produto p = _historicoProduto[index];
 
@@ -82,9 +115,13 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
       title: Text(p.nome),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [Text('R\$ ${p.preco}'), Text(formatter.format(p.dataInsercao!)),],
+        children: [
+          Text('R\$ ${p.preco}'),
+          Text(formatter.format(p.dataInsercao!)),
+        ],
       ),
       onTap: () {
+          _showAvaliar(context, p);
         /*Navigator.pushNamed(context, Routes.detalheProduto,
             arguments: <String, Object>{
               "idProduto": _historicoProduto[index].id!
@@ -108,16 +145,15 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
     );
   }
 
-  
   Future<void> _navigateSugerirEdicaoPage(context, Produto produto) async {
     final result = await Navigator.pushNamed(context, Routes.sugerirEdicao,
-                        arguments: <String, Object>{"produto": produto});
+        arguments: <String, Object>{"produto": produto});
 
     //clicou em retornar
     if (result == null) return;
 
     Produto p = result as Produto;
-    
+
     // When a BuildContext is used from a StatefulWidget, the mounted property
     // must be checked after an asynchronous gap.
     if (!context.mounted) return;
@@ -155,9 +191,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                       ),
                     ];
                   } else {
-                    children = <Widget>[
-                      
-                    ];
+                    children = <Widget>[];
                   }
                   return Center(
                     child: Column(
@@ -170,9 +204,78 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
             const Text("Histórico"),
             Expanded(
                 child: ListView.builder(
-                    itemCount: _historicoProduto.length, itemBuilder: _buildItem))
+                    itemCount: _historicoProduto.length,
+                    itemBuilder: _buildItem))
           ],
         ));
+  }
+
+  Future<void> _showAvaliar(BuildContext context, Produto produto) async {
+    Produto? selecionado = await _produto;
+
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+              title: Text(produto.nome),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(produto.nome),
+                  Text(selecionado?.localizacao ?? ''),
+                  Text(formatter.format(produto.dataInsercao!)),
+                  Text("R\$${produto.preco}"),
+                ],
+              ),
+              actions: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      children: [
+                        TextButton(
+                          onPressed: produto.usuarioJaVotouVoto(
+                                  IDUSUARIOGAMBI, false)
+                              ? null
+                              : () => _votar(produto, IDUSUARIOGAMBI, false),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.thumb_down, color: Colors.red),
+                              SizedBox(
+                                  width:
+                                      4), // Espaçamento entre o ícone e o texto
+                              Text('Dislike'),
+                            ],
+                          ),
+                        ),
+                        Text(produto.qntVotos(false).toString())
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        TextButton(
+                          onPressed:
+                              produto.usuarioJaVotouVoto(IDUSUARIOGAMBI, true)
+                                  ? null
+                                  : () => _votar(produto, IDUSUARIOGAMBI, true),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.thumb_up, color: Colors.green),
+                              SizedBox(
+                                  width:
+                                      4), // Espaçamento entre o ícone e o texto
+                              Text('Like'),
+                            ],
+                          ),
+                        ),
+                        Text(produto.qntVotos(true).toString())
+                      ],
+                    )
+                  ],
+                )
+              ]);
+        });
   }
 
   Row _detalheProduto(Produto produto) {
@@ -185,7 +288,11 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
             Text(produto.nome),
             Text(produto.localizacao ?? ""),
             Text(formatter.format(produto.dataInsercao!)),
-            Text('R\$${produto.preco}'),
+            TextButton(
+                onPressed: () {
+                  _showAvaliar(context, produto);
+                },
+                child: Text('R\$${produto.preco}')),
             Text(produto.descricao ?? ''),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -197,12 +304,13 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                         arguments: <String, Object>{
                           "produtos": List.filled(1, produto),
                           "fromDetail": true
-                          });
+                        });
                   },
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit),
-                  onPressed: () => _navigateSugerirEdicaoPage(context, produto),)
+                  onPressed: () => _navigateSugerirEdicaoPage(context, produto),
+                )
               ],
             )
           ],
@@ -220,7 +328,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
         child: Column(
           children: [
             Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   margin: const EdgeInsets.all(8.0),

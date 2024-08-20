@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
+import 'package:premiumprice/model/voto_usuario_produto.dart';
+import 'package:premiumprice/rest/voto_usuario_produto_rest.dart';
 
 class Produto {
   int? id;
@@ -11,9 +13,20 @@ class Produto {
   double longitude;
   String? localizacao;
   DateTime? dataInsercao;
+  List<VotoUsuarioProduto>? votos;
 
-  Produto(this.id, this.nome, this.descricao, this.preco, this.latitude, this.longitude, this.dataInsercao);
+  Produto(this.id, this.nome, this.descricao, this.preco, this.latitude, this.longitude, this.dataInsercao, this.votos);
   Produto.novo(this.nome, this.descricao, this.preco, this.latitude, this.longitude);
+
+  bool usuarioJaVotou(int idUsuario) {
+    return votos != null ? votos!.any((v) => v.usuarioId == idUsuario) : false;
+  }
+  bool usuarioJaVotouVoto(int idUsuario, bool voto) {
+    return votos != null ? votos!.any((v) => v.usuarioId == idUsuario && v.voto == voto) : false;
+  }
+  int qntVotos(bool voto) {
+    return votos != null ? votos!.where((v) => v.voto == voto).length : 0;
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -34,7 +47,8 @@ class Produto {
       Decimal.parse(map['preco'].toString()),
       map['latitude'],
       map['longitude'],
-      DateTime.parse(map['dataInsercao'])
+      DateTime.parse(map['dataInsercao']),
+      VotoUsuarioProduto.fromMaps(List<Map<String, dynamic>>.from(map['votos']))
     );
   }
 

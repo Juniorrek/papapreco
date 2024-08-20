@@ -24,6 +24,11 @@ class ProdutoRepository {
     return await api.historico(nome, latitude, longitude);
   }
 
+/* TODO: TROCAR PARA BUSCAR PRODUTO ATUAL NÃO PELO ID MAIS
+  Future<List<Produto>> atual(String nome, double latitude, double longitude) async {
+    return await api.historico(nome, latitude, longitude);
+  }*/
+
   Future<List<Produto>> buscarPorUrlQrNFCeFazenda(String urlQr) async {
     return await api.buscarPorUrlQrNFCeFazenda(urlQr);
   }
