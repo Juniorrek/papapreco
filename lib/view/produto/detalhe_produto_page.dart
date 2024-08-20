@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
+import 'package:intl/intl.dart';
 import 'package:premiumprice/helper/error.dart';
 import 'package:premiumprice/model/produto.dart';
 import 'package:premiumprice/repositories/produto_repository.dart';
 import 'package:premiumprice/routes/routes.dart';
-import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
-import 'package:premiumprice/widgets/produto/detalhe_produto_widget.dart';
 import 'package:shimmer/shimmer.dart';
 
 class DetalheProdutoPage extends StatefulWidget {
@@ -20,10 +18,11 @@ class DetalheProdutoPage extends StatefulWidget {
 }
 
 class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
+  final DateFormat formatter = DateFormat('dd/MM/yyyy – kk:mm');
   final ProdutoRepository _repository = ProdutoRepository();
   Future<Produto>? _produto;
 
-  List<Produto> _outrosProdutos = <Produto>[];
+  List<Produto> _historicoProduto = <Produto>[];
 
   bool _isLoading = false;
 
@@ -40,30 +39,34 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
   }
 
   void _buscarProduto(int idProduto) async {
+    setState(() {
     _isLoading = true;
+    });
     try {
-      //await Future.delayed(const Duration(seconds: 2));
+      //await Future.delayed(const Duration(seconds: 1));
       _repository.buscarPorId(idProduto).then((produto) {
         setState(() {
           _produto = Future.value(produto);
         });
 
-        _buscarOutrosProdutos(produto.nome);
+        _buscarHistoricoProduto(produto.nome, produto.latitude, produto.longitude);
       });
     } catch (exception) {
       showError(context, "Erro buscando produto", exception.toString());
     }
   }
 
-  void _buscarOutrosProdutos(String nome) async {
+  void _buscarHistoricoProduto(String nome, double latitude, double longitude) async {
     List<Produto> tempList = <Produto>[];
 
     try {
-      tempList = await _repository.buscarPorNome(nome);
-      tempList.removeWhere((p) => p.id == widget.idProduto);
+      tempList = await _repository.historico(nome, latitude, longitude);
+      _produto?.then((p) {
+        tempList.removeWhere((pp) => pp.id == p.id);
+      });
 
       setState(() {
-        _outrosProdutos = tempList;
+        _historicoProduto = tempList;
         _isLoading = false;
       });
     } catch (exception) {
@@ -73,19 +76,19 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
   }
 
   ListTile _buildItem(BuildContext context, int index) {
-    Produto p = _outrosProdutos[index];
+    Produto p = _historicoProduto[index];
 
     return ListTile(
       title: Text(p.nome),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [Text(p.localizacao ?? ""), Text('R\$ ${p.preco}')],
+        children: [Text('R\$ ${p.preco}'), Text(formatter.format(p.dataInsercao!)),],
       ),
       onTap: () {
-        Navigator.pushNamed(context, Routes.detalheProduto,
+        /*Navigator.pushNamed(context, Routes.detalheProduto,
             arguments: <String, Object>{
-              "idProduto": _outrosProdutos[index].id!
-            });
+              "idProduto": _historicoProduto[index].id!
+            });*/
       },
       /*trailing: PopupMenuButton(
         itemBuilder: (context) {
@@ -105,6 +108,23 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
     );
   }
 
+  
+  Future<void> _navigateSugerirEdicaoPage(context, Produto produto) async {
+    final result = await Navigator.pushNamed(context, Routes.sugerirEdicao,
+                        arguments: <String, Object>{"produto": produto});
+
+    //clicou em retornar
+    if (result == null) return;
+
+    Produto p = result as Produto;
+    
+    // When a BuildContext is used from a StatefulWidget, the mounted property
+    // must be checked after an asynchronous gap.
+    if (!context.mounted) return;
+
+    _buscarProduto(p.id!);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return _loadingDetails();
@@ -121,7 +141,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                 builder: (context, snapshot) {
                   List<Widget> children;
                   if (snapshot.hasData) {
-                    return DetalheProdutoWidget(produto: snapshot.data!);
+                    return _detalheProduto(snapshot.data!);
                   } else if (snapshot.hasError) {
                     children = <Widget>[
                       const Icon(
@@ -147,12 +167,48 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                   );
                 }),
             const SizedBox(height: 10),
-            const Text("Outros estabelecimentos"),
+            const Text("Histórico"),
             Expanded(
                 child: ListView.builder(
-                    itemCount: _outrosProdutos.length, itemBuilder: _buildItem))
+                    itemCount: _historicoProduto.length, itemBuilder: _buildItem))
           ],
         ));
+  }
+
+  Row _detalheProduto(Produto produto) {
+    return Row(
+      children: [
+        //_buildImage(),
+        Expanded(
+            child: Column(
+          children: [
+            Text(produto.nome),
+            Text(produto.localizacao ?? ""),
+            Text(formatter.format(produto.dataInsercao!)),
+            Text('R\$${produto.preco}'),
+            Text(produto.descricao ?? ''),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.pin_drop),
+                  onPressed: () {
+                    Navigator.pushNamed(context, Routes.listarProdutosMapa,
+                        arguments: <String, Object>{
+                          "produtos": List.filled(1, produto),
+                          "fromDetail": true
+                          });
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _navigateSugerirEdicaoPage(context, produto),)
+              ],
+            )
+          ],
+        ))
+      ],
+    );
   }
 
   Scaffold _loadingDetails() {

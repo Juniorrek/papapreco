@@ -38,10 +38,7 @@ class ProdutoRest {
     }
   }
 
-
-
   Future<List<Produto>> filtrar(String nome, double latitude, double longitude, double distancia, double precoMin, double precoMax) async {
-    Uri t = Uri.parse("${API.endpoint}/produtos/filtrar?nome=$nome&latitude=$latitude&longitude=$longitude&distancia=$distancia&precoMin=$precoMin&precoMax=$precoMax");
     final http.Response response =
         await http.get(Uri.parse("http://${API.endpoint}/produtos/filtrar?nome=$nome&latitude=$latitude&longitude=$longitude&distancia=$distancia&precoMin=$precoMin&precoMax=$precoMax"));
 
@@ -51,6 +48,32 @@ class ProdutoRest {
       return produtos;
     } else {
       throw Exception('Erro filtrando os produtos.');
+    }
+  }
+
+  Future<List<Produto>> ranking(String palavra, double latitude, double longitude, double distancia, double precoMin, double precoMax) async {
+    final http.Response response =
+        await http.get(Uri.parse("http://${API.endpoint}/produtos/ranking?palavra=$palavra&latitude=$latitude&longitude=$longitude&distancia=$distancia&precoMin=$precoMin&precoMax=$precoMax"));
+
+    if (response.statusCode == 200) {
+      List<Produto> produtos = Produto.fromJsonList(response.body);
+
+      return produtos;
+    } else {
+      throw Exception('Erro ranking os produtos.');
+    }
+  }
+
+  Future<List<Produto>> historico(String nome, double latitude, double longitude) async {
+    final http.Response response =
+        await http.get(Uri.parse("http://${API.endpoint}/produtos/historico?nome=$nome&latitude=$latitude&longitude=$longitude"));
+
+    if (response.statusCode == 200) {
+      List<Produto> produtos = Produto.fromJsonList(response.body);
+
+      return produtos;
+    } else {
+      throw Exception('Erro historico os produtos.');
     }
   }
 
@@ -96,6 +119,21 @@ class ProdutoRest {
       return produtos;
     } else {
       throw Exception('Erro buscando os produtos do QR CODE.');
+    }
+  }
+
+  Future<Produto> inserir(Produto produto) async {
+    final http.Response response = await http.post(
+      Uri.http(API.endpoint, 'produtos'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: produto.toJson(),
+    );
+    if (response.statusCode == 200) {
+      return Produto.fromJson(response.body);;
+    } else {
+      throw Exception('Erro inserindo produto ${produto.id}.');
     }
   }
 }

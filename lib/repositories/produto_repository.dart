@@ -16,7 +16,19 @@ class ProdutoRepository {
     return await api.filtrar(nome, latitude, longitude, distancia, precoMin, precoMax);
   }
 
+  Future<List<Produto>> ranking(String palavra, double latitude, double longitude, double distancia, double precoMin, double precoMax) async {
+    return await api.ranking(palavra, latitude, longitude, distancia, precoMin, precoMax);
+  }
+
+  Future<List<Produto>> historico(String nome, double latitude, double longitude) async {
+    return await api.historico(nome, latitude, longitude);
+  }
+
   Future<List<Produto>> buscarPorUrlQrNFCeFazenda(String urlQr) async {
     return await api.buscarPorUrlQrNFCeFazenda(urlQr);
+  }
+
+  Future<Produto> inserir(Produto produto) async {
+    return await api.inserir(produto);
   }
 }

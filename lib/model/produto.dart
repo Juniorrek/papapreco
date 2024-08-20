@@ -5,13 +5,14 @@ import 'package:decimal/decimal.dart';
 class Produto {
   int? id;
   String nome;
-  String descricao;
+  String? descricao;
   Decimal preco;
   double latitude;
   double longitude;
   String? localizacao;
+  DateTime? dataInsercao;
 
-  Produto(this.id, this.nome, this.descricao, this.preco, this.latitude, this.longitude);
+  Produto(this.id, this.nome, this.descricao, this.preco, this.latitude, this.longitude, this.dataInsercao);
   Produto.novo(this.nome, this.descricao, this.preco, this.latitude, this.longitude);
 
   Map<String, dynamic> toMap() {
@@ -21,7 +22,8 @@ class Produto {
       'descricao': descricao,
       'preco': preco,
       'latitude': latitude,
-      'longitude': longitude
+      'longitude': longitude,
+      'dataInsercao': dataInsercao?.toIso8601String()
     };
   }
   static Produto fromMap(Map<String, dynamic> map) {
@@ -32,6 +34,7 @@ class Produto {
       Decimal.parse(map['preco'].toString()),
       map['latitude'],
       map['longitude'],
+      DateTime.parse(map['dataInsercao'])
     );
   }
 

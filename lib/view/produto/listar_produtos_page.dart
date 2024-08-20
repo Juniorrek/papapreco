@@ -8,17 +8,19 @@ import 'package:premiumprice/routes/routes.dart';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 
 class ListarProdutosPage extends StatefulWidget {
-  final String nomeProduto;
+  final String palavra;
   final double latitude;
   final double longitude;
   final String localizacao;
+  final double distancia;
 
   const ListarProdutosPage(
       {super.key,
-      required this.nomeProduto,
+      required this.palavra,
       required this.latitude,
       required this.longitude,
-      required this.localizacao});
+      required this.localizacao,
+      required this.distancia});
 
   static const String routeName = '/produtos';
 
@@ -28,7 +30,7 @@ class ListarProdutosPage extends StatefulWidget {
 
 class _ListarProdutosPageState extends State<ListarProdutosPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nomeProdutoController = TextEditingController();
+  final _palavraController = TextEditingController();
   ProdutoRepository _repository = ProdutoRepository();
 
   List<Produto> _lista = <Produto>[];
@@ -37,7 +39,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
   late double _latitude;
   late double _longitude;
 
-  double _distancia = 5.0;
+  late double _distancia;
   double _precoMin = 0.0;
   double _precoMax = 999999.0;
 
@@ -45,12 +47,15 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
   void initState() {
     super.initState();
 
-    _nomeProdutoController.text = widget.nomeProduto;
+    _palavraController.text = widget.palavra;
+    
+    _latitude = widget.latitude;
+    _longitude = widget.longitude;
+
+    _distancia = widget.distancia;
 
     _refreshList();
 
-    _latitude = widget.latitude;
-    _longitude = widget.longitude;
     setState(() {
       _localizacaoAtual = widget.localizacao;
     });
@@ -103,7 +108,12 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
     List<Produto> tempLista = <Produto>[];
 
     try {
-      tempLista = await _repository.buscarPorNome(_nomeProdutoController.text);
+      tempLista = await _repository.ranking(_palavraController.text,
+                                            _latitude,
+                                            _longitude,
+                                            _distancia,
+                                            _precoMin,
+                                            _precoMax);
     } catch (exception) {
       showError(
           context, "Erro obtendo lista de produtos", exception.toString());
@@ -119,9 +129,13 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
       leading: const Icon(Icons.image),
       title: Text(p.nome),
       subtitle: Text('R\$ ${p.preco}'),
-      onTap: () {
-        Navigator.pushNamed(context, Routes.detalheProduto,
+      onTap: () async {
+        final result = await Navigator.pushNamed(context, Routes.detalheProduto,
             arguments: <String, Object>{"idProduto": _lista[index].id!});
+
+        if (!context.mounted) return;
+
+        _refreshList();
       },
       trailing: PopupMenuButton(
         itemBuilder: (context) {
@@ -142,16 +156,19 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
   }
 
   Future<void> _navigateFiltrarProdutosPage(context) async {
-    final Map result = await Navigator.pushNamed(context, Routes.filtrarProdutos,
+    final Map? result = await Navigator.pushNamed(context, Routes.filtrarProdutos,
         arguments: <String, Object>{
-          "nomeProduto": _nomeProdutoController.text,
+          "palavra": _palavraController.text,
           "latitude": _latitude,
           "longitude": _longitude,
           "localizacao": _localizacaoAtual,
           "distancia": _distancia,
           "precoMin": _precoMin,
           "precoMax": _precoMax
-        }) as Map<String, Object>;
+        }) as Map<String, Object>?;
+
+    //clicou em retornar
+    if (result == null) return;
 
     
     // When a BuildContext is used from a StatefulWidget, the mounted property
@@ -161,7 +178,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
     List<Produto> tempLista = <Produto>[];
 
     try {
-      tempLista = await _repository.filtrar(result['nomeProduto'], 
+      tempLista = await _repository.ranking(result!['palavra'], 
                                           result['latitude'],
                                           result['longitude'],
                                           result['distancia'],
@@ -172,7 +189,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
           context, "Erro filtrando lista de produtos", exception.toString());
     }
     setState(() {
-        _nomeProdutoController.text = result['nomeProduto'];
+        _palavraController.text = result!['palavra'];
         _latitude = result['latitude'];
         _longitude = result['longitude'];
         _localizacaoAtual = result['localizacao'];
@@ -192,10 +209,11 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
           title: const Text("Premium Price"),
           leading: BackButton(
               onPressed: () => Navigator.pop(context, <String, Object>{
-                    "nomeProduto": _nomeProdutoController.text,
+                    "palavra": _palavraController.text,
                     "latitude": _latitude,
                     "longitude": _longitude,
-                    "localizacao": _localizacaoAtual
+                    "localizacao": _localizacaoAtual,
+                    "distancia": _distancia
                   })) /*IconButton(
     icon: const Icon(Icons.arrow_back, color: Colors.black),
     onPressed: () => Navigator.of(context).pop(),
@@ -216,7 +234,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                           decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               labelText: 'Produto:'),
-                          controller: _nomeProdutoController,
+                          controller: _palavraController,
                           validator: (value) {
                             if (value!.isEmpty) {
                               return 'Campo não pode ser vazio';
@@ -231,7 +249,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Flexible(child: Text('$_localizacaoAtual (5km)')),
+                            Flexible(child: Text('$_localizacaoAtual (${_distancia}km)')),
                             const Icon(Icons.arrow_drop_down)
                           ],
                         )),

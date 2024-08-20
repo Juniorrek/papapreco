@@ -8,7 +8,7 @@ import 'package:premiumprice/routes/routes.dart';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 
 class FiltrarProdutosPage extends StatefulWidget {
-  final String nomeProduto;
+  final String palavra;
   final double latitude;
   final double longitude;
   final String localizacao;
@@ -18,7 +18,7 @@ class FiltrarProdutosPage extends StatefulWidget {
 
   const FiltrarProdutosPage(
       {super.key,
-      required this.nomeProduto,
+      required this.palavra,
       required this.latitude,
       required this.longitude,
       required this.localizacao,
@@ -34,7 +34,7 @@ class FiltrarProdutosPage extends StatefulWidget {
 
 class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nomeProdutoController = TextEditingController();
+  final _palavraController = TextEditingController();
 
   String _localizacaoAtual = '';
   late double _latitude;
@@ -52,17 +52,17 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
     _latitude = widget.latitude;
     _longitude = widget.longitude;
     setState(() {
-      _nomeProdutoController.text = widget.nomeProduto;
+      _palavraController.text = widget.palavra;
 
       _localizacaoAtual = widget.localizacao;
       _currentSliderDistanciaValue = widget.distancia;
 
-      if (widget.precoMin.toString() != "") {
+      /*if (widget.precoMin.toString() != "") {
         _minPrecoController.text = widget.precoMin.toString();
       }
       if (widget.precoMax.toString() != "") {
         _maxPrecoController.text = widget.precoMax.toString();
-      }
+      }*/
     });
     //_setLocalizacaoAtual(widget.latitude, widget.longitude);
   }
@@ -104,13 +104,13 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
 
   Future<void> _filtrarProdutos() async {
     Navigator.pop(context, <String, Object>{
-                    "nomeProduto": _nomeProdutoController.text,
+                    "palavra": _palavraController.text,
                     "latitude": _latitude,
                     "longitude": _longitude,
                     "localizacao": _localizacaoAtual,
                     "distancia": _currentSliderDistanciaValue,
-                    "precoMin": _minPrecoController.text != "" ? double.parse(_minPrecoController.text) : 0,
-                    "precoMax": _maxPrecoController.text != "" ? double.parse(_maxPrecoController.text) : 999999,
+                    "precoMin": _minPrecoController.text != "" ? double.parse(_minPrecoController.text) : widget.precoMin,
+                    "precoMax": _maxPrecoController.text != "" ? double.parse(_maxPrecoController.text) : widget.precoMax,
                   });
   }
 
@@ -134,7 +134,7 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                                 child: TextFormField(
                                   decoration: const InputDecoration(
                                       border: OutlineInputBorder()),
-                                  controller: _nomeProdutoController,
+                                  controller: _palavraController,
                                   validator: (value) {
                                     if (value!.isEmpty) {
                                       return 'Campo não pode ser vazio';
@@ -159,7 +159,7 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                                   children: [
                                     Flexible(
                                         child:
-                                            Text('$_localizacaoAtual (5km)')),
+                                            Text('$_localizacaoAtual (${_currentSliderDistanciaValue}km)')),
                                     const Icon(Icons.arrow_drop_down)
                                   ],
                                 ))

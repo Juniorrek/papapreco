@@ -9,6 +9,7 @@ import 'package:premiumprice/view/produto/filtrar_produtos_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_mapa_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_page.dart';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
+import 'package:premiumprice/view/produto/sugerir_edicao_page.dart';
 import 'package:shimmer/shimmer.dart';
 
 import 'routes/routes.dart';
@@ -44,18 +45,21 @@ class MyApp extends StatelessWidget {
           Routes.definirLocalizacao: (ctx) => DefinirLocalizacaoPage(
               latitude: args["latitude"], longitude: args["longitude"]),
           Routes.listarProdutos: (ctx) => ListarProdutosPage(
-              nomeProduto: args["nomeProduto"],
+              palavra: args["palavra"],
               latitude: args["latitude"],
               longitude: args["longitude"],
-              localizacao: args["localizacao"]),
+              localizacao: args["localizacao"],
+              distancia: args["distancia"]),
           Routes.detalheProduto: (ctx) =>
               DetalheProdutoPage(idProduto: args["idProduto"]),
+          Routes.sugerirEdicao: (ctx) =>
+              SugerirEdicaoPage(produto: args["produto"]),
           Routes.listarProdutosMapa: (ctx) => ListarProdutosMapaPage(
                 produtos: args["produtos"],
                 fromDetail: args["fromDetail"],
               ),
           Routes.filtrarProdutos: (ctx) => FiltrarProdutosPage(
-              nomeProduto: args["nomeProduto"],
+              palavra: args["palavra"],
               latitude: args["latitude"],
               longitude: args["longitude"],
               localizacao: args["localizacao"],
@@ -87,11 +91,12 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final _formKey = GlobalKey<FormState>();
 
-  final _nomeProdutoController = TextEditingController();
+  final _palavraController = TextEditingController();
 
   String _localizacaoAtual = '';
   double? latitude = null;
   double? longitude = null;
+  double _distancia = 5.0;
 
   @override
   void initState() {
@@ -163,10 +168,11 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_formKey.currentState!.validate() && latitude != null) {
       final Map result = await Navigator.pushNamed(context, Routes.listarProdutos,
           arguments: <String, Object>{
-            "nomeProduto": _nomeProdutoController.text,
+            "palavra": _palavraController.text,
             "latitude": latitude!,
             "longitude": longitude!,
-            "localizacao": _localizacaoAtual
+            "localizacao": _localizacaoAtual,
+            "distancia": _distancia
           }) as Map<String, Object>;
 
       
@@ -175,10 +181,11 @@ class _MyHomePageState extends State<MyHomePage> {
       if (!context.mounted) return;
 
       setState(() {
-        _nomeProdutoController.text = result['nomeProduto'];
+        _palavraController.text = result['palavra'];
         latitude = result['latitude'];
         longitude = result['longitude'];
         _localizacaoAtual = result['localizacao'];
+        _distancia = result['distancia'];
       });
     }
   }
@@ -211,7 +218,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         decoration: const InputDecoration(
                             border: OutlineInputBorder(),
                             labelText: 'Produto:'),
-                        controller: _nomeProdutoController,
+                        controller: _palavraController,
                         validator: (value) {
                           if (value!.isEmpty) {
                             return 'Campo não pode ser vazio';
@@ -226,7 +233,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Flexible(child: Text('$_localizacaoAtual (5km)')),
+                          Flexible(child: Text('$_localizacaoAtual (${_distancia}km)')),
                           const Icon(Icons.arrow_drop_down)
                         ],
                       )),
