@@ -104,7 +104,6 @@ class _SugerirEdicaoPageState extends State<SugerirEdicaoPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 8),
                         child: TextFormField(
-                          keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
                             border:
                                 OutlineInputBorder(), /*labelText: 'Produto:'*/

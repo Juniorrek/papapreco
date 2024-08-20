@@ -48,7 +48,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
     super.initState();
 
     _palavraController.text = widget.palavra;
-    
+
     _latitude = widget.latitude;
     _longitude = widget.longitude;
 
@@ -108,12 +108,8 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
     List<Produto> tempLista = <Produto>[];
 
     try {
-      tempLista = await _repository.ranking(_palavraController.text,
-                                            _latitude,
-                                            _longitude,
-                                            _distancia,
-                                            _precoMin,
-                                            _precoMax);
+      tempLista = await _repository.ranking(_palavraController.text, _latitude,
+          _longitude, _distancia, _precoMin, _precoMax);
     } catch (exception) {
       showError(
           context, "Erro obtendo lista de produtos", exception.toString());
@@ -156,7 +152,8 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
   }
 
   Future<void> _navigateFiltrarProdutosPage(context) async {
-    final Map? result = await Navigator.pushNamed(context, Routes.filtrarProdutos,
+    final Map? result = await Navigator.pushNamed(
+        context, Routes.filtrarProdutos,
         arguments: <String, Object>{
           "palavra": _palavraController.text,
           "latitude": _latitude,
@@ -170,7 +167,6 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
     //clicou em retornar
     if (result == null) return;
 
-    
     // When a BuildContext is used from a StatefulWidget, the mounted property
     // must be checked after an asynchronous gap.
     if (!context.mounted) return;
@@ -178,27 +174,28 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
     List<Produto> tempLista = <Produto>[];
 
     try {
-      tempLista = await _repository.ranking(result!['palavra'], 
-                                          result['latitude'],
-                                          result['longitude'],
-                                          result['distancia'],
-                                          result['precoMin'], 
-                                          result['precoMax']);
+      tempLista = await _repository.ranking(
+          result!['palavra'],
+          result['latitude'],
+          result['longitude'],
+          result['distancia'],
+          result['precoMin'],
+          result['precoMax']);
     } catch (exception) {
       showError(
           context, "Erro filtrando lista de produtos", exception.toString());
     }
     setState(() {
-        _palavraController.text = result!['palavra'];
-        _latitude = result['latitude'];
-        _longitude = result['longitude'];
-        _localizacaoAtual = result['localizacao'];
+      _palavraController.text = result!['palavra'];
+      _latitude = result['latitude'];
+      _longitude = result['longitude'];
+      _localizacaoAtual = result['localizacao'];
 
-        _distancia = result['distancia'];
-        _precoMin = result['precoMin'];
-        _precoMax = result['precoMax'];
-        
-        _lista = tempLista;
+      _distancia = result['distancia'];
+      _precoMin = result['precoMin'];
+      _precoMax = result['precoMax'];
+
+      _lista = tempLista;
     });
   }
 
@@ -206,20 +203,31 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text("Premium Price"),
-          leading: BackButton(
-              onPressed: () => Navigator.pop(context, <String, Object>{
-                    "palavra": _palavraController.text,
-                    "latitude": _latitude,
-                    "longitude": _longitude,
-                    "localizacao": _localizacaoAtual,
-                    "distancia": _distancia
-                  })) /*IconButton(
-    icon: const Icon(Icons.arrow_back, color: Colors.black),
-    onPressed: () => Navigator.of(context).pop(),
-  )*/
-          ,
-          //automaticallyImplyLeading: false,
+            title: const Text("Premium Price"),
+            leading: BackButton(
+                onPressed: () => Navigator.pop(context, <String, Object>{
+                      "palavra": _palavraController.text,
+                      "latitude": _latitude,
+                      "longitude": _longitude,
+                      "localizacao": _localizacaoAtual,
+                      "distancia": _distancia
+                    }))),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            final result = await Navigator.pushNamed(
+                context, Routes.cadastrarProduto,
+                arguments: <String, Object>{
+                  "latitude": _latitude,
+                  "longitude": _longitude,
+                  "localizacao": _localizacaoAtual,
+                });
+            if (!context.mounted) return;
+            _refreshList();
+          },
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.green,
+          shape: const CircleBorder(),
+          child: const Icon(Icons.plus_one),
         ),
         body: Column(
           children: [
@@ -249,7 +257,9 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Flexible(child: Text('$_localizacaoAtual (${_distancia}km)')),
+                            Flexible(
+                                child: Text(
+                                    '$_localizacaoAtual (${_distancia}km)')),
                             const Icon(Icons.arrow_drop_down)
                           ],
                         )),
@@ -277,7 +287,8 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.filter_alt),
-                          onPressed: () => _navigateFiltrarProdutosPage(context),
+                          onPressed: () =>
+                              _navigateFiltrarProdutosPage(context),
                         ),
                       ],
                     ),

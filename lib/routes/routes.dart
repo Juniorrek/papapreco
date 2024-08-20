@@ -1,5 +1,6 @@
 import 'package:premiumprice/main.dart';
 import 'package:premiumprice/view/definir_localizacao_page.dart';
+import 'package:premiumprice/view/produto/cadastrar_produto_page.dart';
 import 'package:premiumprice/view/produto/confirmar_digitalizacao_page.dart';
 import 'package:premiumprice/view/produto/detalhe_produto_page.dart';
 import 'package:premiumprice/view/produto/digitalizar_nota_page.dart';
@@ -18,6 +19,7 @@ class Routes {
   static const String filtrarProdutos = FiltrarProdutosPage.routeName;
 
   static const String sugerirEdicao = SugerirEdicaoPage.routeName;
+  static const String cadastrarProduto = CadastrarProdutoPage.routeName;
 
   static const String definirLocalizacao = DefinirLocalizacaoPage.routeName;
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:premiumprice/view/definir_localizacao_page.dart';
+import 'package:premiumprice/view/produto/cadastrar_produto_page.dart';
 import 'package:premiumprice/view/produto/confirmar_digitalizacao_page.dart';
 import 'package:premiumprice/view/produto/detalhe_produto_page.dart';
 import 'package:premiumprice/view/produto/digitalizar_nota_page.dart';
@@ -50,6 +51,10 @@ class MyApp extends StatelessWidget {
               longitude: args["longitude"],
               localizacao: args["localizacao"],
               distancia: args["distancia"]),
+          Routes.cadastrarProduto: (ctx) => CadastrarProdutoPage(
+              latitude: args["latitude"],
+              longitude: args["longitude"],
+              localizacao: args["localizacao"]),
           Routes.detalheProduto: (ctx) =>
               DetalheProdutoPage(idProduto: args["idProduto"]),
           Routes.sugerirEdicao: (ctx) =>

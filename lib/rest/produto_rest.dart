@@ -131,7 +131,7 @@ class ProdutoRest {
       body: produto.toJson(),
     );
     if (response.statusCode == 200) {
-      return Produto.fromJson(response.body);;
+      return Produto.fromJson(response.body);
     } else {
       throw Exception('Erro inserindo produto ${produto.id}.');
     }

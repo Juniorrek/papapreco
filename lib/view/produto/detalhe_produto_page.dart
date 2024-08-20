@@ -201,7 +201,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                   );
                 }),
             const SizedBox(height: 10),
-            const Text("Histórico"),
+            _historicoProduto.isNotEmpty ? const Text("Histórico") : const SizedBox.shrink(),
             Expanded(
                 child: ListView.builder(
                     itemCount: _historicoProduto.length,

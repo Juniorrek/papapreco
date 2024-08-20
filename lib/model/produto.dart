@@ -47,8 +47,8 @@ class Produto {
       Decimal.parse(map['preco'].toString()),
       map['latitude'],
       map['longitude'],
-      DateTime.parse(map['dataInsercao']),
-      VotoUsuarioProduto.fromMaps(List<Map<String, dynamic>>.from(map['votos']))
+      map['dataInsercao'] == null ? null : DateTime.parse(map['dataInsercao']),
+      map['votos'] == null ? null : VotoUsuarioProduto.fromMaps(List<Map<String, dynamic>>.from(map['votos']))
     );
   }
 
