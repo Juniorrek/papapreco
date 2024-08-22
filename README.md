@@ -39,6 +39,11 @@ A new Flutter project.
 
 - `flutter emulators --launch flutter_emulator`
 
+### Flutter secure storage
+
+- `sudo apt install libsecret-1-dev libsecret-tools libsecret-1-0`
+
+
 # Iniciar
 
 - `flutter run`

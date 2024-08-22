@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
+import 'package:premiumprice/misc/auth/auth_provider.dart';
+import 'package:premiumprice/model/usuario.dart';
+import 'package:premiumprice/view/auth/cadastro_page.dart';
+import 'package:premiumprice/view/auth/esqueci_senha_codigo_page.dart';
+import 'package:premiumprice/view/auth/esqueci_senha_page.dart';
+import 'package:premiumprice/view/auth/esqueci_senha_redefinicao_page.dart';
+import 'package:premiumprice/view/auth/login_page.dart';
 import 'package:premiumprice/view/definir_localizacao_page.dart';
 import 'package:premiumprice/view/produto/cadastrar_produto_page.dart';
 import 'package:premiumprice/view/produto/confirmar_digitalizacao_page.dart';
@@ -11,12 +18,23 @@ import 'package:premiumprice/view/produto/listar_produtos_mapa_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_page.dart';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 import 'package:premiumprice/view/produto/sugerir_edicao_page.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:premiumprice/widgets/end_drawer.dart';
+import 'package:premiumprice/misc/auth/jwt_lib.dart' as jwt_lib;
+import 'package:provider/provider.dart';
 
 import 'routes/routes.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) {
+        final auth = AuthProvider();
+        auth.loadUser(); // Carrega o estado do usuário ao iniciar
+        return auth;
+      },
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -25,19 +43,35 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Premium Price',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurpleAccent),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Premium Price'),
+      home: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          return const MyHomePage(title: 'Premium Price');
+          /*if (auth.isLoggedIn) {
+            return HomePage();
+          } else {
+            return LoginPage();
+          }*/
+        },
+      ),
       routes: {
         Routes.home: (context) => const MyHomePage(title: 'Premium Price'),
         //Routes.listarProdutos: (context) => const ListarProdutosPage(),
         //paginas com parametro nao precisam ser declaradas aqui ja que estao embaixos
         //Routes.listarProdutosMapa: (context) => const ListarProdutosMapaPage(),
         //Routes.definirLocalizacao: (context) => const DefinirLocalizacaoPage(),
-        Routes.digitalizarNota: (context) => const DigitalizarNotaPage()
+        Routes.digitalizarNota: (context) => const DigitalizarNotaPage(),
+        Routes.login: (context) => const LoginPage(),
+        Routes.cadastro: (context) => const CadastroPage(),
+        Routes.esqueciSenha: (context) => EsqueciSenhaPage(),
+        /*Routes.esqueciSenhaCodigo: (context) => EsqueciSenhaCodigoPage(email: '',),
+        Routes.esqueciSenhaRedefinicao: (context) =>
+            const EsqueciSenhaRedefinicaoPage()*/
       },
       onGenerateRoute: (settings) {
         final Map args = settings.arguments as Map<String, Object>;
@@ -73,6 +107,10 @@ class MyApp extends StatelessWidget {
               precoMax: args["precoMax"]),
           Routes.confirmarDigitalizacao: (ctx) =>
               ConfirmarDigitalizacaoPage(urlQr: args["urlQr"]),
+          Routes.esqueciSenhaCodigo: (ctx) =>
+              EsqueciSenhaCodigoPage(email: args["email"]),
+          Routes.esqueciSenhaRedefinicao: (ctx) =>
+              EsqueciSenhaRedefinicaoPage(email: args["email"], token: args["token"]),
         };
 
         WidgetBuilder builder = routes[settings.name];
@@ -171,7 +209,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _navigateListarProdutosPage(context) async {
     if (_formKey.currentState!.validate() && latitude != null) {
-      final Map result = await Navigator.pushNamed(context, Routes.listarProdutos,
+      final Map result = await Navigator.pushNamed(
+          context, Routes.listarProdutos,
           arguments: <String, Object>{
             "palavra": _palavraController.text,
             "latitude": latitude!,
@@ -180,7 +219,6 @@ class _MyHomePageState extends State<MyHomePage> {
             "distancia": _distancia
           }) as Map<String, Object>;
 
-      
       // When a BuildContext is used from a StatefulWidget, the mounted property
       // must be checked after an asynchronous gap.
       if (!context.mounted) return;
@@ -198,6 +236,9 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
+      endDrawer:
+          context.watch<AuthProvider>().isLoggedIn ? const EndDrawer() : null,
       body: Center(
         child: Form(
             key: _formKey,
@@ -238,7 +279,9 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Flexible(child: Text('$_localizacaoAtual (${_distancia}km)')),
+                          Flexible(
+                              child:
+                                  Text('$_localizacaoAtual (${_distancia}km)')),
                           const Icon(Icons.arrow_drop_down)
                         ],
                       )),
@@ -248,24 +291,33 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: const Text('Pesquisar'),
                   )
                 ])),
+                if (!context.watch<AuthProvider>().isLoggedIn)
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 8),
                       child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(
-                                context, Routes.digitalizarNota);
+                          onPressed: () async {
+                            /*Navigator.pushNamed(
+                                context, Routes.digitalizarNota);*/
+                            /*final result = */await Navigator.pushNamed(
+                                context, Routes.login);
+                            /*if (result == true) {
+                              setState(() {
+                                // Atualize o estado ou recarregue as informações conforme necessário.
+                              });
+                            }*/
                           },
                           child: const Text("Login"))),
                   ElevatedButton(
                       onPressed: () {
-                        Navigator.pushNamed(
+                        /*Navigator.pushNamed(
                             context, Routes.confirmarDigitalizacao,
                             arguments: <String, String>{
                               "urlQr":
                                   "https://www.fazenda.pr.gov.br/nfce/qrcode?p=41240778116670001994650110000706859008861151|2|1|19|191.37|36424547706431514c323277326e5933526a4272497a356d31746b3d|1|1E71BE91A8A04C4D104650E2FB2AB5B14CDB91E8"
-                            });
+                            });*/
+                        Navigator.pushNamed(context, Routes.cadastro);
                       },
                       child: const Text("Criar Conta")),
                 ])

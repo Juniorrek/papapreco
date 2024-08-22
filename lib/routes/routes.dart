@@ -1,4 +1,9 @@
 import 'package:premiumprice/main.dart';
+import 'package:premiumprice/view/auth/cadastro_page.dart';
+import 'package:premiumprice/view/auth/esqueci_senha_codigo_page.dart';
+import 'package:premiumprice/view/auth/esqueci_senha_page.dart';
+import 'package:premiumprice/view/auth/esqueci_senha_redefinicao_page.dart';
+import 'package:premiumprice/view/auth/login_page.dart';
 import 'package:premiumprice/view/definir_localizacao_page.dart';
 import 'package:premiumprice/view/produto/cadastrar_produto_page.dart';
 import 'package:premiumprice/view/produto/confirmar_digitalizacao_page.dart';
@@ -25,4 +30,11 @@ class Routes {
 
   static const String digitalizarNota = DigitalizarNotaPage.routeName;
   static const String confirmarDigitalizacao = ConfirmarDigitalizacaoPage.routeName;
+
+  static const String login = LoginPage.routeName;
+  static const String cadastro = CadastroPage.routeName;
+
+  static const String esqueciSenha = EsqueciSenhaPage.routeName;
+  static const String esqueciSenhaCodigo = EsqueciSenhaCodigoPage.routeName;
+  static const String esqueciSenhaRedefinicao = EsqueciSenhaRedefinicaoPage.routeName;
 }
