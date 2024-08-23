@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:premiumprice/widgets/scanned_barcode_label.dart';
 import 'package:premiumprice/widgets/scanner_button_widgets.dart';
 import 'package:premiumprice/widgets/scanner_error_widget.dart';
 

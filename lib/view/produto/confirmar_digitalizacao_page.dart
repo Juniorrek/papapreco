@@ -15,7 +15,6 @@ class ConfirmarDigitalizacaoPage extends StatefulWidget {
 
 class _ConfirmarDigitalizacaoPageState
     extends State<ConfirmarDigitalizacaoPage> {
-  final ProdutoRepository _repository = ProdutoRepository();
   List<Produto> _lista = <Produto>[];
 
   @override
@@ -39,8 +38,10 @@ class _ConfirmarDigitalizacaoPageState
       ProdutoRepository repository = ProdutoRepository();
       tempLista = await repository.buscarPorUrlQrNFCeFazenda(widget.urlQr);
     } catch (exception) {
-      showError(
-          context, "Erro obtendo lista de produtos", exception.toString());
+      if (mounted) {
+        showError(
+            context, "Erro obtendo lista de produtos", exception.toString());
+      }
     }
 
     return tempLista;

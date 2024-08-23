@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:premiumprice/misc/auth/auth_provider.dart';
+import 'package:premiumprice/routes/routes.dart';
 import 'package:provider/provider.dart';
 
 class EndDrawer extends StatelessWidget {
@@ -32,11 +33,26 @@ class EndDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
+            leading: const Icon(Icons.home),
+            title: const Text('Home'),
+            onTap: () {
+              Navigator.pushReplacementNamed(context, Routes.home);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Alterar senha'),
+            onTap: () {
+              Navigator.pushNamed(context, Routes.alterarSenha);
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Logout'),
             onTap: () {
               context.read<AuthProvider>().logout();
-              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, Routes.home);
+              //Navigator.pop(context);
             },
           ),
         ],

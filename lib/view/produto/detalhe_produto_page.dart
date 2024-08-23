@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:premiumprice/helper/error.dart';
 import 'package:premiumprice/helper/success.dart';
 import 'package:premiumprice/model/produto.dart';
-import 'package:premiumprice/model/voto_usuario_produto.dart';
 import 'package:premiumprice/repositories/produto_repository.dart';
 import 'package:premiumprice/repositories/voto_usuario_produto_repository.dart';
 import 'package:premiumprice/routes/routes.dart';
@@ -79,32 +78,39 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
         _isLoading = false;
       });
     } catch (exception) {
-      showError(
+      if (mounted) {
+        showError(
           context, "Erro obtendo lista de produtos", exception.toString());
+      }
     }
   }
 
   Future<void> _votar(Produto produto, int usuarioId, bool voto) async {
     try {
-      VotoUsuarioProduto v;
       if (!produto.usuarioJaVotou(IDUSUARIOGAMBI)) {
-        v = await _votoRepository.votar(produto.id!, usuarioId, voto);
+        await _votoRepository.votar(produto.id!, usuarioId, voto);
 
-        Navigator.of(context).pop();
+        if (mounted) {
+          Navigator.of(context).pop();
 
-        showSuccess(context, "Voto realizado com sucesso");
+          showSuccess(context, "Voto realizado com sucesso");
+        }
       } else {
-        v = await _votoRepository.mudarVoto(produto.id!, usuarioId, voto);
+        await _votoRepository.mudarVoto(produto.id!, usuarioId, voto);
 
-        Navigator.of(context).pop();
+        if (mounted) {
+          Navigator.of(context).pop();
 
-        showSuccess(context, "Voto alterado com sucesso");
+          showSuccess(context, "Voto alterado com sucesso");
+        }
       }
 
       _buscarProduto(widget.idProduto);
     } catch (exception) {
-      Navigator.of(context).pop();
-      showError(context, "Já votou nesse produto", exception.toString());
+      if (mounted) {
+        Navigator.of(context).pop();
+        showError(context, "Já votou nesse produto", exception.toString());
+      }
     }
   }
 
@@ -121,7 +127,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
         ],
       ),
       onTap: () {
-          _showAvaliar(context, p);
+        _showAvaliar(context, p);
         /*Navigator.pushNamed(context, Routes.detalheProduto,
             arguments: <String, Object>{
               "idProduto": _historicoProduto[index].id!
@@ -201,7 +207,9 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                   );
                 }),
             const SizedBox(height: 10),
-            _historicoProduto.isNotEmpty ? const Text("Histórico") : const SizedBox.shrink(),
+            _historicoProduto.isNotEmpty
+                ? const Text("Histórico")
+                : const SizedBox.shrink(),
             Expanded(
                 child: ListView.builder(
                     itemCount: _historicoProduto.length,
@@ -213,6 +221,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
   Future<void> _showAvaliar(BuildContext context, Produto produto) async {
     Produto? selecionado = await _produto;
 
+    if (!mounted) return;
     showDialog(
         context: context,
         builder: (BuildContext context) {

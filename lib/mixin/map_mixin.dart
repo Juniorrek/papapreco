@@ -1,10 +1,6 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:geolocator/geolocator.dart';
-import 'package:geolocator_linux/geolocator_linux.dart';
-import 'package:http/http.dart' as http;
-import 'package:geoclue/geoclue.dart';
 
 mixin MapMixin {
   /*Future<dynamic> reverseGeocoding(double latitude, double longitude) async {

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:premiumprice/misc/auth/jwt_lib.dart' as jwt_lib;
 import 'package:premiumprice/model/usuario.dart';
 
 
 class AuthProvider with ChangeNotifier {
-  final _storage = FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage();
   String? _token;
   Usuario? _usuario;
 
@@ -17,6 +18,8 @@ class AuthProvider with ChangeNotifier {
   Future<void> login(String token, Usuario usuario) async {
     _token = token;
     _usuario = usuario;
+
+    //jwt_lib.storeToken(token)
 
     await _storage.write(key: 'token', value: token);
     await _storage.write(key: 'usuario', value: usuario.toJson());

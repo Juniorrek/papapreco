@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:premiumprice/helper/error.dart';
-import 'package:premiumprice/helper/success.dart';
 import 'package:premiumprice/model/usuario.dart';
 import 'package:premiumprice/rest/auth_rest.dart';
 import 'package:premiumprice/widgets/auth/senha_e_confirmacao_widget.dart';
@@ -21,9 +20,6 @@ class _CadastroPageState extends State<CadastroPage> {
   String _senha = '';
   final AuthRest _authRest = AuthRest();
 
-  double _passwordStrength = 0.0;
-  String _passwordFeedback = '';
-
   void _cadastrar() async {
     try {
       Usuario novoUsuario = Usuario.novo(_nomeController.text, 
@@ -43,43 +39,11 @@ class _CadastroPageState extends State<CadastroPage> {
     }
   }
 
-  void _updatePasswordStrength(String password) {
-    setState(() {
-      _passwordStrength = _calculatePasswordStrength(password);
-      _passwordFeedback = _getPasswordFeedback(password);
-    });
-  }
-
-  double _calculatePasswordStrength(String password) {
-    double strength = 0.0;
-    if (password.length >= 1) strength += 0.1;
-    if (password.length >= 8) strength += 0.3;
-    if (RegExp(r'[A-Z]').hasMatch(password)) strength += 0.2;
-    if (RegExp(r'[0-9]').hasMatch(password)) strength += 0.2;
-    if (RegExp(r'[!@#\$&*~]').hasMatch(password)) strength += 0.2;
-
-    //
-    //
-    //
-    //
-    //
-    return strength;
-  }
-
-  String _getPasswordFeedback(String password) {
-    if (password.isEmpty) return 'A senha é obrigatória';
-    if (password.length < 8) return 'A senha deve ter pelo menos 8 caracteres';
-    if (!RegExp(r'[A-Z]').hasMatch(password)) return 'Adicione uma letra maiúscula';
-    if (!RegExp(r'[0-9]').hasMatch(password)) return 'Adicione um número';
-    if (!RegExp(r'[!@#\$&*~]').hasMatch(password)) return 'Adicione um caractere especial';
-    return '';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cadastro'+_senha),
+        title: Text('Cadastro$_senha'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -120,7 +84,7 @@ class _CadastroPageState extends State<CadastroPage> {
                 },
               ),
               const SizedBox(height: 16),
-              SenhaEConfirmacaoWidget(onPasswordChanged: (password) {
+              SenhaEConfirmacaoWidget(labelSenha: "Senha", onPasswordChanged: (password) {
                 setState(() {
                   _senha = password;
                 });

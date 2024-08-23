@@ -13,7 +13,7 @@ class EsqueciSenhaPage extends StatelessWidget {
   final AuthRest _authRest = AuthRest();
 
   void _enviarCodigo(context) async {
-    final loadingDialog = showDialog(
+    showDialog(
       context: context,
       barrierDismissible: false, // Impede o fechamento do diálogo ao clicar fora dele
       builder: (BuildContext context) {

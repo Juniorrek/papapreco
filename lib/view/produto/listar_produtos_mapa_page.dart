@@ -3,7 +3,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:premiumprice/misc/map/tile_providers.dart';
 import 'package:premiumprice/model/produto.dart';
-import 'package:premiumprice/repositories/produto_repository.dart';
 import 'dart:math';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 import 'package:premiumprice/routes/routes.dart';

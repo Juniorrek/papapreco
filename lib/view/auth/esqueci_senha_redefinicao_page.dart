@@ -21,35 +21,7 @@ class _EsqueciSenhaRedefinicaoPageState
     extends State<EsqueciSenhaRedefinicaoPage> {
   String _senha = '';
   final _formKey = GlobalKey<FormState>();
-  double _passwordStrength = 0.0;
-  String _passwordFeedback = '';
   final AuthRest _authRest = AuthRest();
-
-  void _updatePasswordStrength(String password) {
-    setState(() {
-      _passwordStrength = _calculatePasswordStrength(password);
-      _passwordFeedback = _getPasswordFeedback(password);
-    });
-  }
-
-  double _calculatePasswordStrength(String password) {
-    double strength = 0.0;
-    if (password.isNotEmpty) strength += 0.1;
-    if (password.length >= 8) strength += 0.3;
-    if (RegExp(r'[A-Z]').hasMatch(password)) strength += 0.2;
-    if (RegExp(r'[0-9]').hasMatch(password)) strength += 0.2;
-    if (RegExp(r'[!@#\$&*~]').hasMatch(password)) strength += 0.2;
-    return strength;
-  }
-
-  String _getPasswordFeedback(String password) {
-    if (password.isEmpty) return 'A senha é obrigatória';
-    if (password.length < 8) return 'A senha deve ter pelo menos 8 caracteres';
-    if (!RegExp(r'[A-Z]').hasMatch(password)) return 'Adicione uma letra maiúscula';
-    if (!RegExp(r'[0-9]').hasMatch(password)) return 'Adicione um número';
-    if (!RegExp(r'[!@#\$&*~]').hasMatch(password)) return 'Adicione um caractere especial';
-    return '';
-  }
 
   void _redefinirSenha(context) async {
     try {
@@ -89,7 +61,7 @@ class _EsqueciSenhaRedefinicaoPageState
                 ),
                 const SizedBox(height: 16),
                 
-              SenhaEConfirmacaoWidget(onPasswordChanged: (password) {
+              SenhaEConfirmacaoWidget(labelSenha: "Senha", onPasswordChanged: (password) {
                 setState(() {
                   _senha = password;
                 });

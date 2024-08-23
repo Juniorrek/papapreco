@@ -37,17 +37,19 @@ class _SugerirEdicaoPageState extends State<SugerirEdicaoPage> {
     super.dispose();
   }
 
-  void _sugerirEdicao() async {
+  void _sugerirEdicao() {
     try {
       _novoProduto!.preco = Decimal.parse(_novoPrecoController.text);
       _novoProduto?.id = null;
 
-      if (_descricaoController.text != null && _descricaoController.text != "") {
+      if (_descricaoController.text != "") {
         _novoProduto?.descricao = _descricaoController.text;
       }
 
       _repository.inserir(_novoProduto!).then((p) {
-        Navigator.pop(context, p);
+        if(mounted) {
+          Navigator.pop(context, p);
+        }
       });
     } catch (exception) {
       showError(context, "Erro inserindo produto", exception.toString());

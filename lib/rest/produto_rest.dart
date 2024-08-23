@@ -113,7 +113,7 @@ class ProdutoRest {
       }
 
       //remove duplicados
-      var seen = Set<String>();
+      var seen = <String>{};
       produtos = produtos.where((p) => seen.add(p.nome)).toList();
 
       return produtos;

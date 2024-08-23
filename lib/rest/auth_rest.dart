@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:premiumprice/misc/auth/jwt_lib.dart' as jwt_lib;
 import 'package:premiumprice/model/usuario.dart';
 import 'package:premiumprice/rest/api.dart';
 

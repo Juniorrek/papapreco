@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:premiumprice/helper/error.dart';
 import 'package:premiumprice/misc/auth/auth_provider.dart';
-import 'package:premiumprice/misc/auth/jwt_lib.dart';
 import 'package:premiumprice/model/usuario.dart';
 import 'package:premiumprice/rest/auth_rest.dart';
 import 'package:premiumprice/routes/routes.dart';
@@ -46,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
 
 
       if (!mounted) return;
-      Navigator.pop(context);
+          Navigator.pushReplacementNamed(context, Routes.home);
     } catch (exception) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Email ou senha inválidos!')));

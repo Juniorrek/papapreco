@@ -59,6 +59,8 @@ class _CadastrarProdutoPageState extends State<CadastrarProdutoPage> {
 
       novoProduto = await _repository.inserir(novoProduto);
 
+
+    if (!mounted) return;
       Navigator.pop(context);
     } catch (exception) {
       showError(context, "Erro inserindo produto", exception.toString());

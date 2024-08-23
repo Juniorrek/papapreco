@@ -13,6 +13,8 @@ import 'package:premiumprice/view/produto/filtrar_produtos_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_mapa_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_page.dart';
 import 'package:premiumprice/view/produto/sugerir_edicao_page.dart';
+import 'package:premiumprice/view/usuario/alterar_senha_page.dart';
+import 'package:premiumprice/view/usuario/produtos_usuario_page.dart';
 
 class Routes {
   static const String home = MyHomePage.routeName;
@@ -37,4 +39,8 @@ class Routes {
   static const String esqueciSenha = EsqueciSenhaPage.routeName;
   static const String esqueciSenhaCodigo = EsqueciSenhaCodigoPage.routeName;
   static const String esqueciSenhaRedefinicao = EsqueciSenhaRedefinicaoPage.routeName;
+
+  //SEM FUNCIONALIDADE
+  //static const String produtosUsuario = ProdutosUsuarioPage.routeName;
+  static const String alterarSenha = AlterarSenhaPage.routeName;
 }

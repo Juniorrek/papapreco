@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 class SenhaEConfirmacaoWidget extends StatefulWidget {
   final ValueChanged<String> onPasswordChanged;
+  final String labelSenha;
 
   const SenhaEConfirmacaoWidget({
     super.key,
-    required this.onPasswordChanged,
+    required this.onPasswordChanged, required this.labelSenha,
   });
 
   @override
@@ -50,11 +51,13 @@ class _SenhaEConfirmacaoWidgetState extends State<SenhaEConfirmacaoWidget> {
   String _getPasswordFeedback(String password) {
     if (password.isEmpty) return 'A senha é obrigatória';
     if (password.length < 8) return 'A senha deve ter pelo menos 8 caracteres';
-    if (!RegExp(r'[A-Z]').hasMatch(password))
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
       return 'Adicione uma letra maiúscula';
+    }
     if (!RegExp(r'[0-9]').hasMatch(password)) return 'Adicione um número';
-    if (!RegExp(r'[!@#\$&*~]').hasMatch(password))
+    if (!RegExp(r'[!@#\$&*~]').hasMatch(password)) {
       return 'Adicione um caractere especial';
+    }
     return '';
   }
 
@@ -64,8 +67,8 @@ class _SenhaEConfirmacaoWidgetState extends State<SenhaEConfirmacaoWidget> {
       children: [
         TextFormField(
           controller: _senhaController,
-          decoration: const InputDecoration(
-            labelText: 'Senha',
+          decoration: InputDecoration(
+            labelText: widget.labelSenha,
             border: OutlineInputBorder(),
           ),
           obscureText: true,

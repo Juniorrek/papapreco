@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:premiumprice/misc/auth/auth_provider.dart';
-import 'package:premiumprice/model/usuario.dart';
 import 'package:premiumprice/view/auth/cadastro_page.dart';
 import 'package:premiumprice/view/auth/esqueci_senha_codigo_page.dart';
 import 'package:premiumprice/view/auth/esqueci_senha_page.dart';
@@ -18,8 +17,9 @@ import 'package:premiumprice/view/produto/listar_produtos_mapa_page.dart';
 import 'package:premiumprice/view/produto/listar_produtos_page.dart';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 import 'package:premiumprice/view/produto/sugerir_edicao_page.dart';
+import 'package:premiumprice/view/usuario/alterar_senha_page.dart';
+import 'package:premiumprice/view/usuario/produtos_usuario_page.dart';
 import 'package:premiumprice/widgets/end_drawer.dart';
-import 'package:premiumprice/misc/auth/jwt_lib.dart' as jwt_lib;
 import 'package:provider/provider.dart';
 
 import 'routes/routes.dart';
@@ -69,6 +69,8 @@ class MyApp extends StatelessWidget {
         Routes.login: (context) => const LoginPage(),
         Routes.cadastro: (context) => const CadastroPage(),
         Routes.esqueciSenha: (context) => EsqueciSenhaPage(),
+        Routes.alterarSenha: (context) => const AlterarSenhaPage(),
+        //Routes.produtosUsuario: (context) => ProdutosUsuarioPage(),//DESISTI, SEM FUNCIONALIDADE
         /*Routes.esqueciSenhaCodigo: (context) => EsqueciSenhaCodigoPage(email: '',),
         Routes.esqueciSenhaRedefinicao: (context) =>
             const EsqueciSenhaRedefinicaoPage()*/
@@ -137,8 +139,8 @@ class _MyHomePageState extends State<MyHomePage> {
   final _palavraController = TextEditingController();
 
   String _localizacaoAtual = '';
-  double? latitude = null;
-  double? longitude = null;
+  double? latitude;
+  double? longitude;
   double _distancia = 5.0;
 
   @override
@@ -236,7 +238,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+          automaticallyImplyLeading: false,),
       endDrawer:
           context.watch<AuthProvider>().isLoggedIn ? const EndDrawer() : null,
       body: Center(

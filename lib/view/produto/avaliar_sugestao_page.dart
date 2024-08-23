@@ -42,11 +42,13 @@ class _AvaliarSugestaoPageState extends State<AvaliarSugestaoPage> {
       _novoProduto!.preco = Decimal.parse(_novoPrecoController.text);
       _novoProduto?.id = null;
 
-      if (_descricaoController.text != null && _descricaoController.text != "") {
+      if (_descricaoController.text != "") {
         _novoProduto?.descricao = _descricaoController.text;
       }
 
       _repository.inserir(_novoProduto!).then((p) {
+
+    if (!mounted) return;
         Navigator.pop(context, p);
       });
     } catch (exception) {

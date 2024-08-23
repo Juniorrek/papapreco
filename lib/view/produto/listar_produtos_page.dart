@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:premiumprice/helper/error.dart';
@@ -31,7 +30,7 @@ class ListarProdutosPage extends StatefulWidget {
 class _ListarProdutosPageState extends State<ListarProdutosPage> {
   final _formKey = GlobalKey<FormState>();
   final _palavraController = TextEditingController();
-  ProdutoRepository _repository = ProdutoRepository();
+  final ProdutoRepository _repository = ProdutoRepository();
 
   List<Produto> _lista = <Produto>[];
 
@@ -111,8 +110,10 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
       tempLista = await _repository.ranking(_palavraController.text, _latitude,
           _longitude, _distancia, _precoMin, _precoMax);
     } catch (exception) {
-      showError(
+      if(mounted) {
+        showError(
           context, "Erro obtendo lista de produtos", exception.toString());
+      }
     }
 
     return tempLista;
@@ -126,7 +127,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
       title: Text(p.nome),
       subtitle: Text('R\$ ${p.preco}'),
       onTap: () async {
-        final result = await Navigator.pushNamed(context, Routes.detalheProduto,
+        await Navigator.pushNamed(context, Routes.detalheProduto,
             arguments: <String, Object>{"idProduto": _lista[index].id!});
 
         if (!context.mounted) return;
@@ -175,7 +176,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
 
     try {
       tempLista = await _repository.ranking(
-          result!['palavra'],
+          result['palavra'],
           result['latitude'],
           result['longitude'],
           result['distancia'],
@@ -186,7 +187,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
           context, "Erro filtrando lista de produtos", exception.toString());
     }
     setState(() {
-      _palavraController.text = result!['palavra'];
+      _palavraController.text = result['palavra'];
       _latitude = result['latitude'];
       _longitude = result['longitude'];
       _localizacaoAtual = result['localizacao'];
@@ -214,7 +215,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                     }))),
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
-            final result = await Navigator.pushNamed(
+            await Navigator.pushNamed(
                 context, Routes.cadastrarProduto,
                 arguments: <String, Object>{
                   "latitude": _latitude,
