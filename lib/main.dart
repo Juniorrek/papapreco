@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:premiumprice/misc/auth/auth_provider.dart';
+import 'package:premiumprice/misc/auth/map_provider.dart';
 import 'package:premiumprice/view/auth/cadastro_page.dart';
 import 'package:premiumprice/view/auth/esqueci_senha_codigo_page.dart';
 import 'package:premiumprice/view/auth/esqueci_senha_page.dart';
@@ -18,20 +19,31 @@ import 'package:premiumprice/view/produto/listar_produtos_page.dart';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 import 'package:premiumprice/view/produto/sugerir_edicao_page.dart';
 import 'package:premiumprice/view/usuario/alterar_senha_page.dart';
-import 'package:premiumprice/view/usuario/produtos_usuario_page.dart';
 import 'package:premiumprice/widgets/end_drawer.dart';
+import 'package:premiumprice/widgets/map/definir_localizacao_widget.dart';
 import 'package:provider/provider.dart';
 
 import 'routes/routes.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) {
-        final auth = AuthProvider();
-        auth.loadUser(); // Carrega o estado do usuário ao iniciar
-        return auth;
-      },
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) {
+            final auth = AuthProvider();
+            auth.loadUser(); // Carrega o estado do usuário ao iniciar
+            return auth;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (context) {
+            final map = MapProvider();
+            map.setCurrentPosition();
+            return map;
+          }
+        ),
+      ],
       child: const MyApp(),
     ),
   );
@@ -237,6 +249,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+
     return Scaffold(
       appBar: AppBar(
           automaticallyImplyLeading: false,),
@@ -258,6 +272,14 @@ class _MyHomePageState extends State<MyHomePage> {
                     style: TextStyle(fontSize: 30),
                   ),
                 ])),
+                DefinirLocaliacaoWidget(
+                  latitude: mapProvider.latitude, 
+                  longitude: mapProvider.longitude,
+                  distancia: mapProvider.distancia,
+                  onData: (lat, lng) {
+                    mapProvider.setLatitude(lat);
+                    mapProvider.setLongitude(lng);
+                  }),
                 Expanded(
                     child: Column(children: <Widget>[
                   Padding(
