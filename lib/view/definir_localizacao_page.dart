@@ -30,7 +30,7 @@ class _DefinirLocalizacaoPageState extends State<DefinirLocalizacaoPage> {
     return Scaffold(
         appBar: AppBar(
           title: const Text("Premium Price"),
-          automaticallyImplyLeading: false,
+          //automaticallyImplyLeading: false,
         ),
         body: Stack(
           children: [
@@ -39,6 +39,8 @@ class _DefinirLocalizacaoPageState extends State<DefinirLocalizacaoPage> {
                 initZoom: map_lib.defaultZoom,
                 minZoomLevel: 5,
                 maxZoomLevel: 18,
+                searchBarHintText: 'Selecione uma localizacao',
+                selectLocationButtonText: 'Definir',
                 //trackMyPosition: true,
                 onPicked: (pickedData) {
                   Navigator.pop(context, pickedData.latLong);

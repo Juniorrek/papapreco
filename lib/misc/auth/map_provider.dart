@@ -5,12 +5,12 @@ import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 class MapProvider with ChangeNotifier {
   double _latitude = map_lib.defaultLatitude;
   double _longitude = map_lib.defaultLongitude;
-  String _localizacaoAtual = '';
+  String _localizacaoString = '';
   double _distancia = 5.0;
 
   double get latitude => _latitude;
   double get longitude => _longitude;
-  String get localizacaoAtual => _localizacaoAtual;
+  String get localizacaoString => _localizacaoString;
   double get distancia => _distancia;
 
   void setLatitude(double latitude) {
@@ -23,8 +23,8 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void setLocalizacaoAtual(String localizacaoAtual) {
-    _localizacaoAtual = localizacaoAtual;
+  void setLocalizacaoString(String localizacaoString) {
+    _localizacaoString = localizacaoString;
     notifyListeners();
   }
 
@@ -39,9 +39,17 @@ class MapProvider with ChangeNotifier {
     if (p != null) {
       setLatitude(latitude); 
       setLongitude(latitude);  
+
+      String reverseGeocodingString =
+        await map_lib.reverseGeocodingString(latitude, longitude);
+      setLocalizacaoString(reverseGeocodingString);
     } else {
       setLatitude(map_lib.defaultLatitude); 
       setLongitude(map_lib.defaultLongitude);
+
+      String reverseGeocodingString =
+        await map_lib.reverseGeocodingString(map_lib.defaultLatitude, map_lib.defaultLongitude);
+      setLocalizacaoString(reverseGeocodingString);
     }
   }
 }

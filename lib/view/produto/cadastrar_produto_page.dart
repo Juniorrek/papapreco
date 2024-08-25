@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:premiumprice/helper/error.dart';
+import 'package:premiumprice/model/localizacao.dart';
 import 'package:premiumprice/model/produto.dart';
 import 'package:premiumprice/repositories/produto_repository.dart';
 import 'package:premiumprice/routes/routes.dart';
@@ -54,8 +55,7 @@ class _CadastrarProdutoPageState extends State<CadastrarProdutoPage> {
       Produto novoProduto = Produto.novo(_nomeProdutoController.text, 
                               _descricaoController.text, 
                               Decimal.parse(_precoController.text), 
-                              _latitude, 
-                              _longitude);
+                              Localizacao.novo(_latitude, _longitude, ''));
 
       novoProduto = await _repository.inserir(novoProduto);
 

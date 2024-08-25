@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:premiumprice/misc/auth/map_provider.dart';
 import 'package:premiumprice/misc/map/tile_providers.dart';
 import 'package:premiumprice/model/produto.dart';
 import 'dart:math';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 import 'package:premiumprice/routes/routes.dart';
+import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ListarProdutosMapaPage extends StatefulWidget {
@@ -22,11 +25,18 @@ class ListarProdutosMapaPage extends StatefulWidget {
 }
 
 class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
+  final DateFormat _dataFormatter = DateFormat('dd/MM/yyyy – kk:mm');
   List<Marker> _markers = <Marker>[];
 
   final MapController _mapController = MapController();
 
   bool isLoading = false;
+
+   final NumberFormat _moneyFormatter = NumberFormat.currency(
+    locale: 'pt_BR',
+    symbol: 'R\$',
+    decimalDigits: 2,
+  );
 
   @override
   void initState() {
@@ -41,12 +51,12 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
   }
 
   LatLng _calcularCentroideProdutos(List<Produto> produtos) {
-    double latitude = (produtos.map<double>((p) => p.latitude).reduce(max) +
-            produtos.map<double>((p) => p.latitude).reduce(min)) /
+    double latitude = (produtos.map<double>((p) => p.localizacao.latitude).reduce(max) +
+            produtos.map<double>((p) => p.localizacao.latitude).reduce(min)) /
         2;
 
-    double longitude = (produtos.map<double>((p) => p.longitude).reduce(max) +
-            produtos.map<double>((p) => p.longitude).reduce(min)) /
+    double longitude = (produtos.map<double>((p) => p.localizacao.longitude).reduce(max) +
+            produtos.map<double>((p) => p.localizacao.longitude).reduce(min)) /
         2;
 
     return LatLng(latitude, longitude);
@@ -54,33 +64,40 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
 
   void _gerarMarkers(List<Produto> produtos) {
     List<Marker> markers = <Marker>[];
-    isLoading = true;
 
-    for (var i = 0; i < widget.produtos.length; i++) {
-      markers.add(Marker(
-          point:
-              LatLng(widget.produtos[i].latitude, widget.produtos[i].longitude),
-          width: 180,
-          height: 180,
-          child: GestureDetector(
-              child: const Icon(
-                Icons.location_on,
-                size: 50,
-              ),
-              onTap: () {
-                _showItem(context, i);
-              })));
-    }
+    if (widget.produtos.isNotEmpty) {
+      isLoading = true;
+      for (var i = 0; i < widget.produtos.length; i++) {
+        markers.add(Marker(
+            point:
+                LatLng(widget.produtos[i].localizacao.latitude, widget.produtos[i].localizacao.longitude),
+            width: 180,
+            height: 180,
+            child: GestureDetector(
+                child: const Icon(
+                  Icons.location_on,
+                  size: 50,
+                ),
+                onTap: () {
+                  if (widget.fromDetail) {
+                    _showItem(context, i);
+                  } else {
+                    Navigator.pushNamed(context, Routes.detalheProduto,
+                      arguments: <String, Object>{"idProduto": widget.produtos[i].id!});
+                  }
+                })));
+      }
 
-    LatLng centroide = _calcularCentroideProdutos(produtos);
+      //LatLng centroide = _calcularCentroideProdutos(produtos);
 
-    setState(() {
-      _markers = markers;
-      isLoading = false;
-      Future.delayed(const Duration(seconds: 1), () {
-        _mapController.move(centroide, map_lib.defaultZoom);
+      setState(() {
+        _markers = markers;
+        isLoading = false;
+        /*Future.delayed(const Duration(seconds: 1), () {
+          _mapController.move(centroide, map_lib.defaultZoom);
+        });*/
       });
-    });
+    }
   }
 
   void _showItem(BuildContext context, int index) {
@@ -92,9 +109,12 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
               title: Text(produto.nome),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Row(children: [Text("Preço: R\$${produto.preco}")])
+                  Column(children: [
+            Text(produto.localizacao.descricao ?? ""),
+            Text(_dataFormatter.format(produto.dataInsercao!)),
+                    Text(_moneyFormatter.format(produto.preco.toDouble()))])
                 ],
               ),
               actions: [
@@ -126,6 +146,8 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
 
   @override
   Widget build(BuildContext context) {
+    final mapProvider = Provider.of<MapProvider>(context);
+    
     if (!isLoading) {
       return Scaffold(
           appBar: AppBar(title: const Text("Premium Price")),
@@ -134,8 +156,9 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
               FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
-                  initialCenter: LatLng(widget.produtos[0].latitude,
-                      widget.produtos[0].longitude),
+                  initialCenter: widget.produtos.isNotEmpty ? LatLng(widget.produtos[0].localizacao.latitude,
+                      widget.produtos[0].localizacao.longitude) : LatLng(mapProvider.latitude,
+                      mapProvider.longitude),
                   initialZoom: map_lib.defaultZoom,
                   cameraConstraint: CameraConstraint.contain(
                     bounds: LatLngBounds(

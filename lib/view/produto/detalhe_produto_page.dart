@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:premiumprice/helper/error.dart';
 import 'package:premiumprice/helper/success.dart';
+import 'package:premiumprice/misc/auth/auth_provider.dart';
 import 'package:premiumprice/model/produto.dart';
 import 'package:premiumprice/repositories/produto_repository.dart';
 import 'package:premiumprice/repositories/voto_usuario_produto_repository.dart';
 import 'package:premiumprice/routes/routes.dart';
+import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 class DetalheProdutoPage extends StatefulWidget {
@@ -20,7 +22,7 @@ class DetalheProdutoPage extends StatefulWidget {
 }
 
 class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
-  final DateFormat formatter = DateFormat('dd/MM/yyyy – kk:mm');
+  final DateFormat _dataFormatter = DateFormat('dd/MM/yyyy – kk:mm');
   final ProdutoRepository _repository = ProdutoRepository();
   final VotoUsuarioProdutoRepository _votoRepository =
       VotoUsuarioProdutoRepository();
@@ -31,6 +33,12 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
   bool _isLoading = false;
 
   final int IDUSUARIOGAMBI = 7;
+
+   final NumberFormat _moneyFormatter = NumberFormat.currency(
+    locale: 'pt_BR',
+    symbol: 'R\$',
+    decimalDigits: 2,
+  );
 
   @override
   void initState() {
@@ -56,7 +64,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
         });
 
         _buscarHistoricoProduto(
-            produto.nome, produto.latitude, produto.longitude);
+            produto.nome, produto.localizacao.latitude, produto.localizacao.longitude);
       });
     } catch (exception) {
       showError(context, "Erro buscando produto", exception.toString());
@@ -122,8 +130,8 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('R\$ ${p.preco}'),
-          Text(formatter.format(p.dataInsercao!)),
+          Text(_moneyFormatter.format(p.preco.toDouble())),
+          Text(_dataFormatter.format(p.dataInsercao!)),
         ],
       ),
       onTap: () {
@@ -220,6 +228,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
 
   Future<void> _showAvaliar(BuildContext context, Produto produto) async {
     Produto? selecionado = await _produto;
+    final isLoggedIn = Provider.of<AuthProvider>(context, listen: false).isLoggedIn;
 
     if (!mounted) return;
     showDialog(
@@ -231,10 +240,9 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(produto.nome),
-                  Text(selecionado?.localizacao ?? ''),
-                  Text(formatter.format(produto.dataInsercao!)),
-                  Text("R\$${produto.preco}"),
+                  Text(selecionado?.localizacao.descricao ?? ''),
+                  Text(_dataFormatter.format(produto.dataInsercao!)),
+                  Text(_moneyFormatter.format(produto.preco.toDouble())),
                 ],
               ),
               actions: [
@@ -244,10 +252,16 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                     Column(
                       children: [
                         TextButton(
-                          onPressed: produto.usuarioJaVotouVoto(
-                                  IDUSUARIOGAMBI, false)
-                              ? null
-                              : () => _votar(produto, IDUSUARIOGAMBI, false),
+                          onPressed: () {
+                            if (!isLoggedIn) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Você precisa estar logado.')));
+                            } else {
+                              if (!produto.usuarioJaVotouVoto(IDUSUARIOGAMBI, false)) {
+                                _votar(produto, IDUSUARIOGAMBI, false);
+                              }
+                            }
+                          },
                           child: const Row(
                             children: [
                               Icon(Icons.thumb_down, color: Colors.red),
@@ -264,10 +278,16 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                     Column(
                       children: [
                         TextButton(
-                          onPressed:
-                              produto.usuarioJaVotouVoto(IDUSUARIOGAMBI, true)
-                                  ? null
-                                  : () => _votar(produto, IDUSUARIOGAMBI, true),
+                          onPressed: () {
+                            if (!isLoggedIn) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Você precisa estar logado.')));
+                            } else {
+                              if (!produto.usuarioJaVotouVoto(IDUSUARIOGAMBI, true)) {
+                                _votar(produto, IDUSUARIOGAMBI, true);
+                              }
+                            }
+                          },
                           child: const Row(
                             children: [
                               Icon(Icons.thumb_up, color: Colors.green),
@@ -288,6 +308,8 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
   }
 
   Row _detalheProduto(Produto produto) {
+    final isLoggedIn = Provider.of<AuthProvider>(context, listen: false).isLoggedIn;
+      
     return Row(
       children: [
         //_buildImage(),
@@ -295,13 +317,13 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
             child: Column(
           children: [
             Text(produto.nome),
-            Text(produto.localizacao ?? ""),
-            Text(formatter.format(produto.dataInsercao!)),
+            Text(produto.localizacao.descricao ?? ""),
+            Text(_dataFormatter.format(produto.dataInsercao!)),
             TextButton(
                 onPressed: () {
                   _showAvaliar(context, produto);
                 },
-                child: Text('R\$${produto.preco}')),
+                child: Text(_moneyFormatter.format(produto.preco.toDouble()))),
             Text(produto.descricao ?? ''),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -318,7 +340,12 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit),
-                  onPressed: () => _navigateSugerirEdicaoPage(context, produto),
+                  onPressed: () { 
+                    if (!isLoggedIn) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Você precisa estar logado.')));
+                    } else {
+                    _navigateSugerirEdicaoPage(context, produto);}},
                 )
               ],
             )

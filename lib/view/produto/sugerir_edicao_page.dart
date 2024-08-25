@@ -77,7 +77,7 @@ class _SugerirEdicaoPageState extends State<SugerirEdicaoPage> {
             child: Column(
           children: [
             Text(widget.produto.nome),
-            Text(widget.produto.localizacao ?? ""),
+            Text(widget.produto.localizacao.descricao ?? ""),
             Text('R\$${widget.produto.preco}'),
             const Text("Novo Preço"),
             Form(

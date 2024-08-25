@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
+import 'package:premiumprice/model/localizacao.dart';
 import 'package:premiumprice/model/produto.dart';
 import 'package:premiumprice/rest/api.dart';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
@@ -8,11 +9,12 @@ import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 class ProdutoRest {
   Future<Produto> buscarPorId(int id) async {
     final http.Response response =
-        await http.get(Uri.http(API.endpoint, "produtos/$id"));
+        await http.get(Uri.parse("http://${API.endpoint}/${API.name}/produtos/$id"));
 
     if (response.statusCode == 200) {
       Produto p = Produto.fromJson(response.body);
-      p.localizacao = await map_lib.reverseGeocodingShop(p.latitude, p.longitude);
+     // String localizacaoString = await map_lib.reverseGeocodingShop(p.localizacao.latitude, p.localizacao.longitude);
+      //p.localizacao = Localizacao.novo(p.localizacao.latitude, p.localizacao.longitude, localizacaoString);
       return p;
     } else {
       throw Exception('Erro buscando o produto por id.');
@@ -51,9 +53,9 @@ class ProdutoRest {
     }
   }
 
-  Future<List<Produto>> ranking(String palavra, double latitude, double longitude, double distancia, double precoMin, double precoMax) async {
+  Future<List<Produto>> ranking(String palavra, double latitude, double longitude, double distancia, Decimal precoMin, Decimal precoMax) async {
     final http.Response response =
-        await http.get(Uri.parse("http://${API.endpoint}/produtos/ranking?palavra=$palavra&latitude=$latitude&longitude=$longitude&distancia=$distancia&precoMin=$precoMin&precoMax=$precoMax"));
+        await http.get(Uri.parse("http://${API.endpoint}/${API.name}/produtos/ranking?palavra=$palavra&latitude=$latitude&longitude=$longitude&distancia=$distancia&precoMin=$precoMin&precoMax=$precoMax"));
 
     if (response.statusCode == 200) {
       List<Produto> produtos = Produto.fromJsonList(response.body);
@@ -66,7 +68,7 @@ class ProdutoRest {
 
   Future<List<Produto>> historico(String nome, double latitude, double longitude) async {
     final http.Response response =
-        await http.get(Uri.parse("http://${API.endpoint}/produtos/historico?nome=$nome&latitude=$latitude&longitude=$longitude"));
+        await http.get(Uri.parse("http://${API.endpoint}/${API.name}/produtos/historico?nome=$nome&latitude=$latitude&longitude=$longitude"));
 
     if (response.statusCode == 200) {
       List<Produto> produtos = Produto.fromJsonList(response.body);
@@ -107,8 +109,7 @@ class ProdutoRest {
                   .replaceAll(",", ".")
               )
               ,
-              lat,
-              lon));
+              Localizacao.novo(lat, lon, '')));
         }
       }
 

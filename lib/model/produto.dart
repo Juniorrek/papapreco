@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
+import 'package:premiumprice/model/localizacao.dart';
 import 'package:premiumprice/model/voto_usuario_produto.dart';
 
 class Produto {
@@ -8,14 +9,12 @@ class Produto {
   String nome;
   String? descricao;
   Decimal preco;
-  double latitude;
-  double longitude;
-  String? localizacao;
+  Localizacao localizacao;
   DateTime? dataInsercao;
   List<VotoUsuarioProduto>? votos;
 
-  Produto(this.id, this.nome, this.descricao, this.preco, this.latitude, this.longitude, this.dataInsercao, this.votos);
-  Produto.novo(this.nome, this.descricao, this.preco, this.latitude, this.longitude);
+  Produto(this.id, this.nome, this.descricao, this.preco, this.localizacao, this.dataInsercao, this.votos);
+  Produto.novo(this.nome, this.descricao, this.preco, this.localizacao);
 
   bool usuarioJaVotou(int idUsuario) {
     return votos != null ? votos!.any((v) => v.usuarioId == idUsuario) : false;
@@ -33,8 +32,7 @@ class Produto {
       'nome': nome,
       'descricao': descricao,
       'preco': preco,
-      'latitude': latitude,
-      'longitude': longitude,
+      'localizacao': localizacao,
       'dataInsercao': dataInsercao?.toIso8601String()
     };
   }
@@ -44,8 +42,7 @@ class Produto {
       map['nome'],
       map['descricao'],
       Decimal.parse(map['preco'].toString()),
-      map['latitude'],
-      map['longitude'],
+      Localizacao.fromMap(map['localizacao']),
       map['dataInsercao'] == null ? null : DateTime.parse(map['dataInsercao']),
       map['votos'] == null ? null : VotoUsuarioProduto.fromMaps(List<Map<String, dynamic>>.from(map['votos']))
     );

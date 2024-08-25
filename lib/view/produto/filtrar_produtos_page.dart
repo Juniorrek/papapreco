@@ -1,23 +1,20 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
-import 'package:premiumprice/routes/routes.dart';
-import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:premiumprice/misc/auth/map_provider.dart';
+import 'package:premiumprice/widgets/map/definir_localizacao_widget.dart';
+import 'package:provider/provider.dart';
 
 class FiltrarProdutosPage extends StatefulWidget {
   final String palavra;
-  final double latitude;
-  final double longitude;
-  final String localizacao;
   final double distancia;
-  final double precoMin;
-  final double precoMax;
+  final Decimal? precoMin;
+  final Decimal? precoMax;
 
   const FiltrarProdutosPage(
       {super.key,
       required this.palavra,
-      required this.latitude,
-      required this.longitude,
-      required this.localizacao,
       required this.distancia,
       required this.precoMin,
       required this.precoMax});
@@ -32,66 +29,29 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
   final _formKey = GlobalKey<FormState>();
   final _palavraController = TextEditingController();
 
-  String _localizacaoAtual = '';
-  late double _latitude;
-  late double _longitude;
-
   late double _currentSliderDistanciaValue;
   final _minPrecoController = TextEditingController();
   final _maxPrecoController = TextEditingController();
+  final MoneyInputFormatter _moneyInputFormatter = MoneyInputFormatter();
 
   @override
   void initState() {
     super.initState();
 
-
-    _latitude = widget.latitude;
-    _longitude = widget.longitude;
     setState(() {
       _palavraController.text = widget.palavra;
-
-      _localizacaoAtual = widget.localizacao;
       _currentSliderDistanciaValue = widget.distancia;
 
-      /*if (widget.precoMin.toString() != "") {
-        _minPrecoController.text = widget.precoMin.toString();
+      if (widget.precoMin != null) {
+        _minPrecoController.text =
+            _moneyInputFormatter.formatDecimal(widget.precoMin!);
       }
-      if (widget.precoMax.toString() != "") {
-        _maxPrecoController.text = widget.precoMax.toString();
-      }*/
-    });
-    //_setLocalizacaoAtual(widget.latitude, widget.longitude);
-  }
-
-  //NÃO CONSIGO JOGAR NA UTIL PQ PRA CHAMAR NA INITSTATE PRECISA SER ASYNC
-  //ENTÃO POR ENQUANTO CODIGO DUPLICADO
-  /////////////////////////////////////////////////////////////
-  void _setLocalizacaoAtual(double latitude, double longitude) async {
-    String reverseGeocodingString =
-        await map_lib.reverseGeocodingString(latitude, longitude);
-    setState(() {
-      _localizacaoAtual = reverseGeocodingString;
+      if (widget.precoMax != null) {
+        _maxPrecoController.text =
+            _moneyInputFormatter.formatDecimal(widget.precoMax!);
+      }
     });
   }
-
-  _navigateDefinirLocalizacaoPage(context) async {
-    final LatLong result = await Navigator.pushNamed(
-        context, Routes.definirLocalizacao,
-        arguments: <String, Object>{
-          "latitude": _latitude,
-          "longitude": _longitude,
-        }) as LatLong;
-
-    // When a BuildContext is used from a StatefulWidget, the mounted property
-    // must be checked after an asynchronous gap.
-    if (!context.mounted) return;
-
-    _latitude = result.latitude;
-    _longitude = result.longitude;
-
-    _setLocalizacaoAtual(result.latitude, result.longitude);
-  }
-  /////////////////////////////////////////////////////////////
 
   @override
   void dispose() {
@@ -99,19 +59,33 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
   }
 
   Future<void> _filtrarProdutos() async {
-    Navigator.pop(context, <String, Object>{
-                    "palavra": _palavraController.text,
-                    "latitude": _latitude,
-                    "longitude": _longitude,
-                    "localizacao": _localizacaoAtual,
-                    "distancia": _currentSliderDistanciaValue,
-                    "precoMin": _minPrecoController.text != "" ? double.parse(_minPrecoController.text) : widget.precoMin,
-                    "precoMax": _maxPrecoController.text != "" ? double.parse(_maxPrecoController.text) : widget.precoMax,
-                  });
+    Navigator.pop(context, <String, Object?>{
+      "palavra": _palavraController.text,
+      "distancia": _currentSliderDistanciaValue,
+      "precoMin": _textoToPreco(_minPrecoController.text),
+      "precoMax": _textoToPreco(_maxPrecoController.text),
+    });
+  }
+
+  Decimal? _textoToPreco(String? texto) {
+    if (texto == null || texto == '') return null;
+
+    // Remove prefixo e espaços extras
+    String cleanPrice = texto.replaceAll(RegExp(r'[^\d,]'), '');
+
+    // Substitui a vírgula por ponto para conversão
+    String priceWithDot = cleanPrice.replaceAll(',', '.');
+
+    // Converte a string para um valor decimal
+    double price = double.parse(priceWithDot);
+
+    return Decimal.parse(price.toString());
   }
 
   @override
   Widget build(BuildContext context) {
+    final mapProvider = Provider.of<MapProvider>(context);
+
     return Scaffold(
         appBar: AppBar(title: const Text("Premium Price")),
         body: Column(
@@ -124,7 +98,11 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                         padding: const EdgeInsets.all(10),
                         child: Column(
                           children: [
-                            const Text("Produto"),
+                            Text("Produto:",
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        )),
                             Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: TextFormField(
@@ -145,20 +123,21 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                         padding: const EdgeInsets.all(10),
                         child: Column(
                           children: [
-                            const Text("Localização"),
-                            TextButton(
-                                onPressed: () {
-                                  _navigateDefinirLocalizacaoPage(context);
-                                },
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Flexible(
-                                        child:
-                                            Text('$_localizacaoAtual (${_currentSliderDistanciaValue}km)')),
-                                    const Icon(Icons.arrow_drop_down)
-                                  ],
-                                ))
+                            Text("Localização:",
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        )),
+                            DefinirLocaliacaoWidget(
+                                latitude: mapProvider.latitude,
+                                longitude: mapProvider.longitude,
+                                localizacaoString:
+                                    mapProvider.localizacaoString,
+                                onData: (lat, lng, loc) {
+                                  mapProvider.setLatitude(lat);
+                                  mapProvider.setLongitude(lng);
+                                  mapProvider.setLocalizacaoString(loc);
+                                })
                           ],
                         )),
                     const SizedBox(height: 5),
@@ -167,7 +146,11 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                         child: Column(
                           children: [
                             Text(
-                                'Distância ($_currentSliderDistanciaValue km)'),
+                                'Distância (${_currentSliderDistanciaValue.round()} km):',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        )),
                             Slider(
                               value: _currentSliderDistanciaValue,
                               max: 50,
@@ -187,7 +170,11 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                         padding: const EdgeInsets.all(10),
                         child: Column(
                           children: [
-                            const Text('Preço'),
+                            Text('Preço:',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        )),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -195,7 +182,12 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                                     child: Padding(
                                         padding: const EdgeInsets.all(10.0),
                                         child: TextFormField(
-                                            keyboardType: TextInputType.number,
+                                            keyboardType: const TextInputType
+                                                .numberWithOptions(
+                                                decimal: true),
+                                            inputFormatters: [
+                                              MoneyInputFormatter(),
+                                            ],
                                             decoration: const InputDecoration(
                                                 border: OutlineInputBorder(),
                                                 labelText: 'Min:'),
@@ -204,7 +196,12 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                                     child: Padding(
                                         padding: const EdgeInsets.all(10.0),
                                         child: TextFormField(
-                                            keyboardType: TextInputType.number,
+                                            keyboardType: const TextInputType
+                                                .numberWithOptions(
+                                                decimal: true),
+                                            inputFormatters: [
+                                              MoneyInputFormatter(),
+                                            ],
                                             decoration: const InputDecoration(
                                                 border: OutlineInputBorder(),
                                                 labelText: 'Max:'),
@@ -226,5 +223,43 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                 ))
           ],
         ));
+  }
+}
+
+class MoneyInputFormatter extends TextInputFormatter {
+  final NumberFormat _formatter = NumberFormat.currency(
+    locale: 'pt_BR',
+    symbol: '',
+    decimalDigits: 2,
+  );
+
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    // Remove caracteres não numéricos e converte para número
+    final text = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+
+    if (text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    // Converte o texto para número e formata
+    final number = double.parse(text) / 100;
+    final formattedText = _formatter.format(number);
+
+    // Adiciona 'R$' ao início se houver valor
+    final finalText = number > 0 ? 'R\$ $formattedText' : '';
+
+    // Mantém o cursor na posição correta
+    return newValue.copyWith(
+      text: finalText,
+      selection: TextSelection.collapsed(offset: finalText.length),
+    );
+  }
+
+  // Método auxiliar para formatar um valor Decimal diretamente
+  String formatDecimal(Decimal decimal) {
+    final number = decimal.toDouble();
+    return number > 0 ? 'R\$ ${_formatter.format(number)}' : '';
   }
 }

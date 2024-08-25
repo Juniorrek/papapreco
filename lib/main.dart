@@ -36,13 +36,11 @@ void main() {
             return auth;
           },
         ),
-        ChangeNotifierProvider(
-          create: (context) {
-            final map = MapProvider();
-            map.setCurrentPosition();
-            return map;
-          }
-        ),
+        ChangeNotifierProvider(create: (context) {
+          final map = MapProvider();
+          map.setCurrentPosition();
+          return map;
+        }),
       ],
       child: const MyApp(),
     ),
@@ -59,6 +57,18 @@ class MyApp extends StatelessWidget {
       title: 'Premium Price',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurpleAccent),
+        /*colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.amber, // Amarelo mais vibrante
+          primary: Colors.black87, // Cor principal
+          secondary: Colors.amber[700], // Cor secundária
+        ),*/
+        //colorScheme: ColorScheme.fromSeed(seedColor: Colors.amberAccent),
+        /*colorScheme: ColorScheme.fromSeed(
+          brightness: MediaQuery.platformBrightnessOf(context),
+          //seedColor: Colors.indigo,
+          seedColor: Colors.deepPurpleAccent,
+        ),*/
+        textTheme: TextTheme(),
         useMaterial3: true,
       ),
       home: Consumer<AuthProvider>(
@@ -88,17 +98,13 @@ class MyApp extends StatelessWidget {
             const EsqueciSenhaRedefinicaoPage()*/
       },
       onGenerateRoute: (settings) {
-        final Map args = settings.arguments as Map<String, Object>;
+        final Map args = settings.arguments as Map<String, Object?>;
 
         Map routes = <String, WidgetBuilder>{
           Routes.definirLocalizacao: (ctx) => DefinirLocalizacaoPage(
               latitude: args["latitude"], longitude: args["longitude"]),
-          Routes.listarProdutos: (ctx) => ListarProdutosPage(
-              palavra: args["palavra"],
-              latitude: args["latitude"],
-              longitude: args["longitude"],
-              localizacao: args["localizacao"],
-              distancia: args["distancia"]),
+          Routes.listarProdutos: (ctx) =>
+              ListarProdutosPage(palavra: args["palavra"]),
           Routes.cadastrarProduto: (ctx) => CadastrarProdutoPage(
               latitude: args["latitude"],
               longitude: args["longitude"],
@@ -113,9 +119,6 @@ class MyApp extends StatelessWidget {
               ),
           Routes.filtrarProdutos: (ctx) => FiltrarProdutosPage(
               palavra: args["palavra"],
-              latitude: args["latitude"],
-              longitude: args["longitude"],
-              localizacao: args["localizacao"],
               distancia: args["distancia"],
               precoMin: args["precoMin"],
               precoMax: args["precoMax"]),
@@ -123,8 +126,8 @@ class MyApp extends StatelessWidget {
               ConfirmarDigitalizacaoPage(urlQr: args["urlQr"]),
           Routes.esqueciSenhaCodigo: (ctx) =>
               EsqueciSenhaCodigoPage(email: args["email"]),
-          Routes.esqueciSenhaRedefinicao: (ctx) =>
-              EsqueciSenhaRedefinicaoPage(email: args["email"], token: args["token"]),
+          Routes.esqueciSenhaRedefinicao: (ctx) => EsqueciSenhaRedefinicaoPage(
+              email: args["email"], token: args["token"]),
         };
 
         WidgetBuilder builder = routes[settings.name];
@@ -150,88 +153,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final _palavraController = TextEditingController();
 
-  String _localizacaoAtual = '';
-  double? latitude;
-  double? longitude;
-  double _distancia = 5.0;
-
   @override
   void initState() {
     super.initState();
-
-    _setCurrentPosition();
   }
-
-  //NÃO CONSIGO JOGAR NA UTIL PQ PRA CHAMAR NA INITSTATE PRECISA SER ASYNC
-  //ENTÃO POR ENQUANTO CODIGO DUPLICADO
-  /////////////////////////////////////////////////////////////
-  Future<void> _setCurrentPosition() async {
-    Position? p = await map_lib.currentLocation();
-
-    if (p != null) {
-      _setLocalizacaoAtualString(p.latitude, p.longitude);
-      setState(() {
-        latitude = p.latitude;
-        longitude = p.longitude;
-      });
-    } else {
-      _setLocalizacaoAtualString(
-          map_lib.defaultLatitude, map_lib.defaultLongitude);
-      setState(() {
-        latitude = map_lib.defaultLatitude;
-        longitude = map_lib.defaultLongitude;
-      });
-      /*setState(() {
-        _localizacaoAtual = "Localização indisponível!";
-      });*/
-    }
-  }
-
-  void _setLocalizacaoAtualString(double latitude, double longitude) async {
-    String reverseGeocodingString =
-        await map_lib.reverseGeocodingString(latitude, longitude);
-    setState(() {
-      _localizacaoAtual = reverseGeocodingString;
-    });
-  }
-
-  Future<void> _navigateDefinirLocalizacaoPage(context) async {
-    if (latitude == null) {
-      latitude = map_lib.defaultLatitude;
-      longitude = map_lib.defaultLongitude;
-    }
-
-    final LatLong result = await Navigator.pushNamed(
-        context, Routes.definirLocalizacao,
-        arguments: <String, Object>{
-          "latitude": latitude!,
-          "longitude": longitude!,
-        }) as LatLong;
-
-    // When a BuildContext is used from a StatefulWidget, the mounted property
-    // must be checked after an asynchronous gap.
-    if (!context.mounted) return;
-
-    setState(() {
-      latitude = result.latitude;
-      longitude = result.longitude;
-    });
-
-    _setLocalizacaoAtualString(result.latitude, result.longitude);
-  }
-  /////////////////////////////////////////////////////////////
 
   Future<void> _navigateListarProdutosPage(context) async {
-    if (_formKey.currentState!.validate() && latitude != null) {
+    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+
+    if (_formKey.currentState!.validate() &&
+        mapProvider.localizacaoString != '') {
       final Map result = await Navigator.pushNamed(
-          context, Routes.listarProdutos,
-          arguments: <String, Object>{
-            "palavra": _palavraController.text,
-            "latitude": latitude!,
-            "longitude": longitude!,
-            "localizacao": _localizacaoAtual,
-            "distancia": _distancia
-          }) as Map<String, Object>;
+              context, Routes.listarProdutos,
+              arguments: <String, Object>{"palavra": _palavraController.text})
+          as Map<String, Object>;
 
       // When a BuildContext is used from a StatefulWidget, the mounted property
       // must be checked after an asynchronous gap.
@@ -239,21 +174,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
       setState(() {
         _palavraController.text = result['palavra'];
-        latitude = result['latitude'];
-        longitude = result['longitude'];
-        _localizacaoAtual = result['localizacao'];
-        _distancia = result['distancia'];
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+    final mapProvider = Provider.of<MapProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
-          automaticallyImplyLeading: false,),
+        automaticallyImplyLeading: false,
+      ),
       endDrawer:
           context.watch<AuthProvider>().isLoggedIn ? const EndDrawer() : null,
       body: Center(
@@ -272,23 +204,19 @@ class _MyHomePageState extends State<MyHomePage> {
                     style: TextStyle(fontSize: 30),
                   ),
                 ])),
-                DefinirLocaliacaoWidget(
-                  latitude: mapProvider.latitude, 
-                  longitude: mapProvider.longitude,
-                  distancia: mapProvider.distancia,
-                  onData: (lat, lng) {
-                    mapProvider.setLatitude(lat);
-                    mapProvider.setLongitude(lng);
-                  }),
                 Expanded(
                     child: Column(children: <Widget>[
+                  Text('Produto:',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          )),
                   Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 8),
                       child: TextFormField(
-                        decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Produto:'),
+                        decoration:
+                            const InputDecoration(border: OutlineInputBorder()),
                         controller: _palavraController,
                         validator: (value) {
                           if (value!.isEmpty) {
@@ -297,19 +225,16 @@ class _MyHomePageState extends State<MyHomePage> {
                           return null;
                         },
                       )),
-                  TextButton(
-                      onPressed: () {
-                        _navigateDefinirLocalizacaoPage(context);
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
-                              child:
-                                  Text('$_localizacaoAtual (${_distancia}km)')),
-                          const Icon(Icons.arrow_drop_down)
-                        ],
-                      )),
+                  DefinirLocaliacaoWidget(
+                      latitude: mapProvider.latitude,
+                      longitude: mapProvider.longitude,
+                      localizacaoString: mapProvider.localizacaoString,
+                      distancia: mapProvider.distancia,
+                      onData: (lat, lng, loc) {
+                        mapProvider.setLatitude(lat);
+                        mapProvider.setLongitude(lng);
+                        mapProvider.setLocalizacaoString(loc);
+                      }),
                   const SizedBox(height: 30),
                   ElevatedButton(
                     onPressed: () => _navigateListarProdutosPage(context),
@@ -317,35 +242,35 @@ class _MyHomePageState extends State<MyHomePage> {
                   )
                 ])),
                 if (!context.watch<AuthProvider>().isLoggedIn)
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 8),
-                      child: ElevatedButton(
-                          onPressed: () async {
-                            /*Navigator.pushNamed(
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 8),
+                        child: ElevatedButton(
+                            onPressed: () async {
+                              /*Navigator.pushNamed(
                                 context, Routes.digitalizarNota);*/
-                            /*final result = */await Navigator.pushNamed(
-                                context, Routes.login);
-                            /*if (result == true) {
+                              /*final result = */ await Navigator.pushNamed(
+                                  context, Routes.login);
+                              /*if (result == true) {
                               setState(() {
                                 // Atualize o estado ou recarregue as informações conforme necessário.
                               });
                             }*/
-                          },
-                          child: const Text("Login"))),
-                  ElevatedButton(
-                      onPressed: () {
-                        /*Navigator.pushNamed(
+                            },
+                            child: const Text("Login"))),
+                    ElevatedButton(
+                        onPressed: () {
+                          /*Navigator.pushNamed(
                             context, Routes.confirmarDigitalizacao,
                             arguments: <String, String>{
                               "urlQr":
                                   "https://www.fazenda.pr.gov.br/nfce/qrcode?p=41240778116670001994650110000706859008861151|2|1|19|191.37|36424547706431514c323277326e5933526a4272497a356d31746b3d|1|1E71BE91A8A04C4D104650E2FB2AB5B14CDB91E8"
                             });*/
-                        Navigator.pushNamed(context, Routes.cadastro);
-                      },
-                      child: const Text("Criar Conta")),
-                ])
+                          Navigator.pushNamed(context, Routes.cadastro);
+                        },
+                        child: const Text("Criar Conta")),
+                  ])
               ],
             )),
       ),

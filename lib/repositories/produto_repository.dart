@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:premiumprice/model/produto.dart';
 import 'package:premiumprice/rest/produto_rest.dart';
 
@@ -16,7 +17,7 @@ class ProdutoRepository {
     return await api.filtrar(nome, latitude, longitude, distancia, precoMin, precoMax);
   }
 
-  Future<List<Produto>> ranking(String palavra, double latitude, double longitude, double distancia, double precoMin, double precoMax) async {
+  Future<List<Produto>> ranking(String palavra, double latitude, double longitude, double distancia, Decimal precoMin, Decimal precoMax) async {
     return await api.ranking(palavra, latitude, longitude, distancia, precoMin, precoMax);
   }
 
