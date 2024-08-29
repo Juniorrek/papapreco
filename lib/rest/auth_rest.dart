@@ -7,7 +7,7 @@ import 'package:premiumprice/rest/api.dart';
 class AuthRest {
   Future<Map> signIn(String email, String senha) async {
     final http.Response response = await http.post(
-      Uri.http(API.endpoint, '${API.name}/auth/signin'),
+      Uri.http(API.endpoint, '${API.name}/auth/login'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -25,6 +25,24 @@ class AuthRest {
       return jsonDecode(response.body);
     } else {
       throw Exception('Erro fazendo login.');
+    }
+  }
+
+
+  Future<Map> signInGoogle(String idToken, String accessToken) async {
+    final http.Response response = await http.post(
+      Uri.http(API.endpoint, '${API.name}/auth/login/google'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        "idToken": idToken
+      }));
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Erro fazendo login via google.');
     }
   }
 

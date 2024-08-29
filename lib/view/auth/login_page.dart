@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:premiumprice/misc/auth/auth_provider.dart';
 import 'package:premiumprice/model/usuario.dart';
 import 'package:premiumprice/rest/auth_rest.dart';
@@ -21,11 +22,49 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   final AuthRest _authRest = AuthRest();
+
+  
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: '736661748519-433ei1nefrp6m1f0k3forqbh904r8oac.apps.googleusercontent.com',
+    scopes: [
+      'email',
+      /*'profile',
+      'openid'*/
+    ],
+  );
   
 
   @override
   void initState() {
     super.initState();
+  }
+
+  void _signInGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser != null) {
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final String? idToken = googleAuth.idToken;
+
+        Map a = await _authRest.signInGoogle(idToken!, googleAuth.accessToken!);
+
+        Usuario u = Usuario.fromMap(a['usuario']);
+
+        if (!mounted) return;
+
+        await context.read<AuthProvider>().login(a['token'], u);
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Logado com sucesso.')));
+
+
+        if (!mounted) return;
+            Navigator.pushReplacementNamed(context, Routes.home);
+      }
+    } catch (e) {
+      print('EROO $e');
+    }
   }
 
   void _logar() async {
@@ -35,11 +74,13 @@ class _LoginPageState extends State<LoginPage> {
       Usuario u = Usuario.fromMap(a['usuario']);
 
       if (!mounted) return;
+
       await context.read<AuthProvider>().login(a['token'], u);
 
 
-      /*ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Logado com sucesso.')));*/
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Logado com sucesso.')));
 
 
       if (!mounted) return;
@@ -117,13 +158,20 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
             ),
-            Row(
+            ElevatedButton.icon(
+              icon: const FaIcon(FontAwesomeIcons.google, color: Colors.red,),
+              label: const Text("Entrar com a conta Google"),
+              onPressed: () =>_signInGoogle()
+            ),
+            /*Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
                   icon: const FaIcon(FontAwesomeIcons.google),
-                  iconSize: 25,
-                  onPressed: () {},
+                  iconSize: 35,
+                  onPressed: () {
+                    _signInGoogle();
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                   ),
@@ -131,14 +179,14 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(width: 10),
                 IconButton(
                   icon: const FaIcon(FontAwesomeIcons.facebook),
-                  iconSize: 25,
+                  iconSize: 35,
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                   ),
                 ),
               ],
-            ),
+            ),*/
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

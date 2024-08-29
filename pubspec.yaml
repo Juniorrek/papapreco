@@ -51,6 +51,9 @@ dependencies:
   jwt_decoder: ^2.0.1
   font_awesome_flutter: ^10.4.0
   provider: ^6.1.2
+  image_picker_android: ^0.8.12+13
+  google_sign_in: ^6.2.1
+  google_sign_in_web: ^0.12.4+2
 
 dev_dependencies:
   flutter_test:

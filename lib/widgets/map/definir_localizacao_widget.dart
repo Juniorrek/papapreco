@@ -3,8 +3,8 @@ import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:premiumprice/routes/routes.dart';
 import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
 
-class DefinirLocaliacaoWidget extends StatefulWidget {
-  const DefinirLocaliacaoWidget(
+class DefinirLocalizacaoWidget extends StatefulWidget {
+  const DefinirLocalizacaoWidget(
       {super.key,
       required this.onData,
       required this.latitude,
@@ -19,24 +19,16 @@ class DefinirLocaliacaoWidget extends StatefulWidget {
   final double? distancia;
 
   @override
-  State<DefinirLocaliacaoWidget> createState() =>
+  State<DefinirLocalizacaoWidget> createState() =>
       _DefinirLocaliacaoWidgetState();
 }
 
-class _DefinirLocaliacaoWidgetState extends State<DefinirLocaliacaoWidget> {
+class _DefinirLocaliacaoWidgetState extends State<DefinirLocalizacaoWidget> {
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-
-    if (widget.localizacaoString == '') {
-      setState(() {
-        _isLoading = true;
-      });
-
-      _setLocalizacaoAtualString(widget.latitude, widget.longitude);
-    }
   }
 
   Future<void> _setLocalizacaoAtualString(double latitude, double longitude) async {
@@ -44,14 +36,6 @@ class _DefinirLocaliacaoWidgetState extends State<DefinirLocaliacaoWidget> {
         await map_lib.reverseGeocodingString(latitude, longitude);
 
     widget.onData(latitude, longitude, reverseGeocodingString);
-
-    setState(() {
-      _isLoading = false;
-    });
-    
-    /*setState(() {
-      _localizacaoString = reverseGeocodingString;
-    });*/
   }
 
   Future<void> _navigateDefinirLocalizacaoPage(context) async {
@@ -69,15 +53,22 @@ class _DefinirLocaliacaoWidgetState extends State<DefinirLocaliacaoWidget> {
     // must be checked after an asynchronous gap.
     if (!context.mounted) return;
 
-    setState(() {
-      _isLoading = true;
-    });
-
     await _setLocalizacaoAtualString(result.latitude, result.longitude);
+  }
+
+  void _updateLoadingState() {
+    setState(() {
+      _isLoading = widget.localizacaoString.isEmpty;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    // Verifica se o estado precisa ser atualizado quando o widget é reconstruído
+    if (widget.localizacaoString.isEmpty != _isLoading) {
+      _updateLoadingState();
+    }
+
     return TextButton(
         onPressed: () {
           _navigateDefinirLocalizacaoPage(context);
@@ -94,8 +85,9 @@ class _DefinirLocaliacaoWidgetState extends State<DefinirLocaliacaoWidget> {
 
   Widget _text() {
     if (!_isLoading) {
-      return Text(widget.localizacaoString +
-                (widget.distancia != null ? ' (${widget.distancia?.toInt().toString()}km)' : ''));
+      return Flexible(
+      child:Text(widget.localizacaoString +
+                (widget.distancia != null ? ' (${widget.distancia?.toInt().toString()}km)' : '')));
     } else {
       return const SizedBox(
             width: 15,  // Largura desejada

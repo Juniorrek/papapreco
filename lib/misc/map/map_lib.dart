@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
-double defaultLatitude = -25.4284;
-double defaultLongitude = -49.2733;
+double defaultLatitude = -25.441105;
+double defaultLongitude = -49.276855;
 double defaultZoom = 18;
 
 Future<dynamic> geocoding(String query) async {

@@ -22,6 +22,7 @@
         {
             "name": "premiumprice",
             "request": "launch",
+            "program": "lib/main.dart",
             "type": "dart"
         },
         {

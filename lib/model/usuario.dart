@@ -1,20 +1,23 @@
 import 'dart:convert';
+import 'dart:ffi';
 
 class Usuario {
   int? id;
   String nome;
   String email;
   String? senha;
+  bool verificado;
 
-  Usuario(this.id, this.nome, this.email, this.senha);
-  Usuario.novo(this.nome, this.email, this.senha);
+  Usuario(this.id, this.nome, this.email, this.senha, this.verificado);
+  Usuario.novo(this.nome, this.email, this.senha, this.verificado);
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'nome': nome,
       'email': email,
-      'senha': senha
+      'senha': senha,
+      'verificado': verificado
     };
   }
   static Usuario fromMap(Map<String, dynamic> map) {
@@ -22,7 +25,8 @@ class Usuario {
       map['id'],
       map['nome'],
       map['email'],
-      map['senha']
+      map['senha'],
+      map['verificado']
     );
   }
 

@@ -1,4 +1,4 @@
-package com.example.premiumprice
+package br.com.premiumprice
 
 import io.flutter.embedding.android.FlutterActivity
 

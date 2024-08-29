@@ -37,8 +37,8 @@ class MapProvider with ChangeNotifier {
     Position? p = await map_lib.currentLocation();
 
     if (p != null) {
-      setLatitude(latitude); 
-      setLongitude(latitude);  
+      setLatitude(p.latitude); 
+      setLongitude(p.longitude);  
 
       String reverseGeocodingString =
         await map_lib.reverseGeocodingString(latitude, longitude);

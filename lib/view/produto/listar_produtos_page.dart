@@ -243,16 +243,20 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                             return null;
                           },
                         )),
-                    DefinirLocaliacaoWidget(
-                      latitude: mapProvider.latitude,
-                      longitude: mapProvider.longitude,
-                      localizacaoString: mapProvider.localizacaoString,
-                      distancia: mapProvider.distancia,
-                      onData: (lat, lng, loc) {
-                        mapProvider.setLatitude(lat);
-                        mapProvider.setLongitude(lng);
-                        mapProvider.setLocalizacaoString(loc);
-                      }),
+                    Consumer<MapProvider>(
+                    builder: (context, mapProvider, child) {
+                      return DefinirLocalizacaoWidget(
+                          latitude: mapProvider.latitude,
+                          longitude: mapProvider.longitude,
+                          localizacaoString: mapProvider.localizacaoString,
+                          distancia: mapProvider.distancia,
+                          onData: (lat, lng, loc) {
+                            mapProvider.setLatitude(lat);
+                            mapProvider.setLongitude(lng);
+                            mapProvider.setLocalizacaoString(loc);
+                          });
+                    },
+                  ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [

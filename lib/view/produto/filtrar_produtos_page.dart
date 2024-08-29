@@ -84,8 +84,6 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
 
   @override
   Widget build(BuildContext context) {
-    final mapProvider = Provider.of<MapProvider>(context);
-
     return Scaffold(
         appBar: AppBar(title: const Text("Premium Price")),
         body: Column(
@@ -128,16 +126,20 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
                         )),
-                            DefinirLocaliacaoWidget(
-                                latitude: mapProvider.latitude,
-                                longitude: mapProvider.longitude,
-                                localizacaoString:
-                                    mapProvider.localizacaoString,
-                                onData: (lat, lng, loc) {
-                                  mapProvider.setLatitude(lat);
-                                  mapProvider.setLongitude(lng);
-                                  mapProvider.setLocalizacaoString(loc);
-                                })
+                            Consumer<MapProvider>(
+                        builder: (context, mapProvider, child) {
+                          return DefinirLocalizacaoWidget(
+                              latitude: mapProvider.latitude,
+                              longitude: mapProvider.longitude,
+                              localizacaoString: mapProvider.localizacaoString,
+                              distancia: mapProvider.distancia,
+                              onData: (lat, lng, loc) {
+                                mapProvider.setLatitude(lat);
+                                mapProvider.setLongitude(lng);
+                                mapProvider.setLocalizacaoString(loc);
+                              });
+                        },
+                      )
                           ],
                         )),
                     const SizedBox(height: 5),

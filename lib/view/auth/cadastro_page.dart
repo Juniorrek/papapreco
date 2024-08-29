@@ -19,23 +19,39 @@ class _CadastroPageState extends State<CadastroPage> {
   final _emailController = TextEditingController();
   String _senha = '';
   final AuthRest _authRest = AuthRest();
+  bool _isLoading = false;
 
   void _cadastrar() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       Usuario novoUsuario = Usuario.novo(_nomeController.text, 
                               _emailController.text, 
-                              _senha);
+                              _senha,
+                              false);
 
       novoUsuario = await _authRest.signUp(novoUsuario);
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cadastrado com sucesso.')));
+      if (!novoUsuario.verificado) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sucesso! Verifique seu email.')));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sucesso!')));
+      }
 
       Navigator.pop(context);
     } catch (exception) {
       showError(context, "Erro no cadastro", exception.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -43,7 +59,7 @@ class _CadastroPageState extends State<CadastroPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cadastro$_senha'),
+        title: const Text('Cadastro'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -93,10 +109,12 @@ class _CadastroPageState extends State<CadastroPage> {
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState?.validate() ?? false) {
-                    _cadastrar();
+                    if (!_isLoading)_cadastrar();
                   }
                 },
-                child: const Text('Cadastrar'),
+                child: _isLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Cadastrar'),
               ),
             ],
           ),
