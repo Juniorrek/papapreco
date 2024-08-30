@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:papapreco/exception/unauthorized_exception.dart';
 import 'package:papapreco/helper/error.dart';
 import 'package:papapreco/helper/success.dart';
 import 'package:papapreco/misc/auth/auth_provider.dart';
@@ -9,6 +10,7 @@ import 'package:papapreco/repositories/voto_usuario_produto_repository.dart';
 import 'package:papapreco/routes/routes.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DetalheProdutoPage extends StatefulWidget {
   final int idProduto;
@@ -32,9 +34,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
 
   bool _isLoading = false;
 
-  final int IDUSUARIOGAMBI = 7;
-
-   final NumberFormat _moneyFormatter = NumberFormat.currency(
+  final NumberFormat _moneyFormatter = NumberFormat.currency(
     locale: 'pt_BR',
     symbol: 'R\$',
     decimalDigits: 2,
@@ -63,8 +63,8 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
           _produto = Future.value(produto);
         });
 
-        _buscarHistoricoProduto(
-            produto.nome, produto.localizacao.latitude, produto.localizacao.longitude);
+        _buscarHistoricoProduto(produto.nome, produto.localizacao.latitude,
+            produto.localizacao.longitude);
       });
     } catch (exception) {
       showError(context, "Erro buscando produto", exception.toString());
@@ -88,32 +88,52 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
     } catch (exception) {
       if (mounted) {
         showError(
-          context, "Erro obtendo lista de produtos", exception.toString());
+            context, "Erro obtendo lista de produtos", exception.toString());
       }
     }
   }
 
   Future<void> _votar(Produto produto, int usuarioId, bool voto) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+
+    if (token == null) {
+      showError(context, "Erro", "Token de autenticação não encontrado.");
+      return;
+    }
+
     try {
-      if (!produto.usuarioJaVotou(IDUSUARIOGAMBI)) {
-        await _votoRepository.votar(produto.id!, usuarioId, voto);
-
+      if (!produto.usuarioJaVotou(usuarioId)) {
+        await _votoRepository.votar(produto.id!, usuarioId, voto, token);
         if (mounted) {
-          Navigator.of(context).pop();
-
-          showSuccess(context, "Voto realizado com sucesso");
+        Navigator.of(context).pop();
+          showSuccess(context, "Voto inserido com sucesso");
         }
       } else {
-        await _votoRepository.mudarVoto(produto.id!, usuarioId, voto);
-
-        if (mounted) {
-          Navigator.of(context).pop();
-
-          showSuccess(context, "Voto alterado com sucesso");
+        if (produto.usuarioJaVotouVoto(usuarioId, voto)) {
+          await _votoRepository.cancelarVoto(produto.id!, usuarioId, token);
+          if (mounted) {
+        Navigator.of(context).pop();
+            showSuccess(context, "Voto cancelado com sucesso");
+          }
+        } else {
+          await _votoRepository.mudarVoto(produto.id!, usuarioId, voto, token);
+          if (mounted) {
+        Navigator.of(context).pop();
+            showSuccess(context, "Voto alterado com sucesso");
+          }
         }
       }
 
+      if (mounted) {
+      }
+
       _buscarProduto(widget.idProduto);
+    } on UnauthorizedException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login expirado, entre novamente!')),
+      );
+      Navigator.pushNamed(context, Routes.login);
     } catch (exception) {
       if (mounted) {
         Navigator.of(context).pop();
@@ -126,12 +146,24 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
     Produto p = _historicoProduto[index];
 
     return ListTile(
-      title: Text(p.nome),
+      title: Text(p.nome,
+          style: const TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+          )),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_moneyFormatter.format(p.preco.toDouble())),
-          Text(_dataFormatter.format(p.dataInsercao!)),
+          Text(_moneyFormatter.format(p.preco.toDouble()),
+              style: const TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.normal,
+              )),
+          Text(_dataFormatter.format(p.dataObservacao!),
+              style: const TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.normal,
+              )),
         ],
       ),
       onTap: () {
@@ -216,7 +248,9 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                 }),
             const SizedBox(height: 10),
             _historicoProduto.isNotEmpty
-                ? const Text("Histórico")
+                ? const Column(
+                    children: [Divider(), Text("Histórico")],
+                  )
                 : const SizedBox.shrink(),
             Expanded(
                 child: ListView.builder(
@@ -228,21 +262,46 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
 
   Future<void> _showAvaliar(BuildContext context, Produto produto) async {
     Produto? selecionado = await _produto;
-    final isLoggedIn = Provider.of<AuthProvider>(context, listen: false).isLoggedIn;
+    final isLoggedIn =
+        Provider.of<AuthProvider>(context, listen: false).isLoggedIn;
+
+    final idUsuarioLogado =
+        Provider.of<AuthProvider>(context, listen: false).usuario?.id;
+
+    final bool jaVotouLike = produto.usuarioJaVotouVoto(idUsuarioLogado, true);
+    final bool jaVotouDislike =
+        produto.usuarioJaVotouVoto(idUsuarioLogado, false);
 
     if (!mounted) return;
     showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-              title: Text(produto.nome),
+              title: Center(
+                  child: Text(produto.nome,
+                      style: const TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                      ))),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(selecionado?.localizacao.descricao ?? ''),
-                  Text(_dataFormatter.format(produto.dataInsercao!)),
-                  Text(_moneyFormatter.format(produto.preco.toDouble())),
+                  Text(selecionado?.localizacao.descricao ?? '',
+                      style: const TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.normal,
+                      )),
+                  Text(_dataFormatter.format(produto.dataObservacao!),
+                      style: const TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.normal,
+                      )),
+                  Text(_moneyFormatter.format(produto.preco.toDouble()),
+                      style: const TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                      )),
                 ],
               ),
               actions: [
@@ -252,14 +311,26 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                     Column(
                       children: [
                         TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: !jaVotouDislike
+                                ? Colors.white
+                                : Colors.grey, // Cor de fundo
+                            foregroundColor: !jaVotouDislike
+                                ? Colors.black
+                                : Colors.black45, // Cor do texto
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                           onPressed: () {
                             if (!isLoggedIn) {
+                              Navigator.of(context).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Você precisa estar logado.')));
+                                  const SnackBar(
+                                      content:
+                                          Text('Você precisa estar logado.')));
                             } else {
-                              if (!produto.usuarioJaVotouVoto(IDUSUARIOGAMBI, false)) {
-                                _votar(produto, IDUSUARIOGAMBI, false);
-                              }
+                              _votar(produto, idUsuarioLogado!, false);
                             }
                           },
                           child: const Row(
@@ -278,14 +349,26 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                     Column(
                       children: [
                         TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: !jaVotouLike
+                                ? Colors.white
+                                : Colors.grey, // Cor de fundo
+                            foregroundColor: !jaVotouLike
+                                ? Colors.black
+                                : Colors.black45, // Cor do texto
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                           onPressed: () {
                             if (!isLoggedIn) {
+                              Navigator.of(context).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Você precisa estar logado.')));
+                                  const SnackBar(
+                                      content:
+                                          Text('Você precisa estar logado.')));
                             } else {
-                              if (!produto.usuarioJaVotouVoto(IDUSUARIOGAMBI, true)) {
-                                _votar(produto, IDUSUARIOGAMBI, true);
-                              }
+                              _votar(produto, idUsuarioLogado!, true);
                             }
                           },
                           child: const Row(
@@ -308,45 +391,128 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
   }
 
   Row _detalheProduto(Produto produto) {
-    final isLoggedIn = Provider.of<AuthProvider>(context, listen: false).isLoggedIn;
-      
+    final isLoggedIn =
+        Provider.of<AuthProvider>(context, listen: false).isLoggedIn;
+
+    final Uri googleMapsUri = Uri(
+      scheme: 'https',
+      host: 'www.google.com',
+      path: 'maps/dir/',
+      queryParameters: {
+        'api': '1',
+        'destination':
+            '${produto.localizacao.latitude},${produto.localizacao.longitude}',
+      },
+    );
+
     return Row(
       children: [
         //_buildImage(),
         Expanded(
             child: Column(
           children: [
-            Text(produto.nome),
-            Text(produto.localizacao.descricao ?? ""),
-            Text(_dataFormatter.format(produto.dataInsercao!)),
-            TextButton(
-                onPressed: () {
-                  _showAvaliar(context, produto);
-                },
-                child: Text(_moneyFormatter.format(produto.preco.toDouble()))),
+            Text(produto.nome,
+                style: const TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                )),
+            Text(produto.localizacao.descricao ?? "",
+                style: const TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.normal,
+                )),
+            Text(_dataFormatter.format(produto.dataObservacao!),
+                style: const TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.normal,
+                )),
+            const SizedBox(
+              height: 10,
+            ),
+            Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.0),
+                  border: Border.all(
+                    color: const Color(0xFFFFC531),
+                    width: 2.0,
+                  ),
+                ),
+                child: TextButton(
+                    onPressed: () {
+                      _showAvaliar(context, produto);
+                    },
+                    child: Text(
+                        _moneyFormatter.format(produto.preco.toDouble())))),
             Text(produto.descricao ?? ''),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.pin_drop),
-                  onPressed: () {
-                    Navigator.pushNamed(context, Routes.listarProdutosMapa,
-                        arguments: <String, Object>{
-                          "produtos": List.filled(1, produto),
-                          "fromDetail": true
-                        });
-                  },
+                Container(
+                    padding: const EdgeInsets.all(4.0),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFFFC531),
+                        width: 2.0,
+                      ),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.pin_drop),
+                      color: Colors.black,
+                      iconSize: 30.0,
+                      onPressed: () {
+                        Navigator.pushNamed(context, Routes.listarProdutosMapa,
+                            arguments: <String, Object>{
+                              "produtos": List.filled(1, produto),
+                              "fromDetail": true
+                            });
+                      },
+                    )),
+                Container(
+                  padding: const EdgeInsets.all(4.0),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFFFC531),
+                      width: 2.0,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.directions),
+                    color: Colors.black,
+                    iconSize: 30.0,
+                    onPressed: () async {
+                      if (await canLaunchUrl(googleMapsUri)) {
+                        await launchUrl(googleMapsUri);
+                      } else {
+                        throw 'Não foi possível abrir o Google Maps.';
+                      }
+                    },
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () { 
-                    if (!isLoggedIn) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Você precisa estar logado.')));
-                    } else {
-                    _navigateSugerirEdicaoPage(context, produto);}},
-                )
+                Container(
+                    padding: const EdgeInsets.all(4.0),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFFFC531),
+                        width: 2.0,
+                      ),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.edit),
+                      color: Colors.black,
+                      iconSize: 30.0,
+                      onPressed: () {
+                        if (!isLoggedIn) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Você precisa estar logado.')));
+                        } else {
+                          _navigateSugerirEdicaoPage(context, produto);
+                        }
+                      },
+                    ))
               ],
             )
           ],

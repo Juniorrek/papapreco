@@ -105,17 +105,15 @@ class AuthRest {
     }
   }
 
-  Future<String> redefinirSenha(String email, String token, String novaSenha) async {
+  Future<String> redefinirSenha(String email, String codigo, String novaSenha) async {
     final http.Response response =
         await http.post(Uri.parse('http://${API.endpoint}/${API.name}/auth/redefinirSenha'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, Object>{
-        "token": token,
-        "usuario": {
-          "email": email
-        },
+        "codigo": codigo,
+          "email": email,
         "novaSenha": novaSenha
       }));
 

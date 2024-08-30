@@ -1,8 +1,13 @@
+import 'dart:convert';
+
 import 'package:decimal/decimal.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:papapreco/exception/unauthorized_exception.dart';
 import 'package:papapreco/model/localizacao.dart';
 import 'package:papapreco/model/produto.dart';
+import 'package:papapreco/model/usuario.dart';
 import 'package:papapreco/rest/api.dart';
 import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
 
@@ -79,7 +84,7 @@ class ProdutoRest {
     }
   }
 
-  Future<List<Produto>> buscarPorUrlQrNFCeFazenda(String urlQr) async {
+  Future<List<Produto>> buscarPorUrlQrNFCeFazenda(String urlQr, Usuario u) async {
     final http.Response response = await http.get(Uri.parse(urlQr));
 
     if (response.statusCode == 200) {
@@ -91,6 +96,17 @@ class ProdutoRest {
       var geo = await map_lib.geocoding(localizacao);
       double lat = double.parse(geo[0]["lat"]);
       double lon = double.parse(geo[0]["lon"]);
+      String localizacaoString = await map_lib.reverseGeocodingShop(lat, lon);
+
+      //minerando data
+      var infoNota = document.getElementById("infos");
+      var dadosNota = infoNota?.children.first.children[1].children.first.text;
+      final regex = RegExp(r'\b\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}\b');
+      final match = regex.firstMatch(dadosNota!);
+
+      final dateFormat = DateFormat('dd/MM/yyyy HH:mm:ss');
+      String dateString = match!.group(0)!;
+      final dateTime = dateFormat.parse(dateString);
 
       //minerando produtos
       var table = document.getElementById("tabResult");
@@ -102,14 +118,16 @@ class ProdutoRest {
         for (final tr in trs) {
           produtos.add(Produto.novo(
               tr.getElementsByClassName("txtTit2").first.text,
-              "",
+              null,
               Decimal.parse(exp
                   .firstMatch(
                       tr.getElementsByClassName("RvlUnit").first.text)![0]!
                   .replaceAll(",", ".")
-              )
-              ,
-              Localizacao.novo(lat, lon, '')));
+              ),
+              Localizacao.novo(lat, lon, localizacaoString),
+              DateTime.now(),
+              dateTime,
+              u));
         }
       }
 
@@ -123,18 +141,41 @@ class ProdutoRest {
     }
   }
 
-  Future<Produto> inserir(Produto produto) async {
+  Future<Produto> inserir(Produto produto, String token) async {
     final http.Response response = await http.post(
-      Uri.http(API.endpoint, 'produtos'),
+      Uri.parse("http://${API.endpoint}/${API.name}/produtos"),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
       },
       body: produto.toJson(),
     );
     if (response.statusCode == 200) {
       return Produto.fromJson(response.body);
+    } else if (response.statusCode == 401) {
+      throw UnauthorizedException('Token inválido ou expirado.');
     } else {
       throw Exception('Erro inserindo produto ${produto.id}.');
+    }
+  }
+
+  Future<void> inserirLista(List<Produto> produtos, String token) async {
+    final http.Response response = await http.post(
+      Uri.parse("http://${API.endpoint}/${API.name}/produtos/lista"),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: Produto.toJsonList(produtos),
+    );
+    if (response.statusCode == 200) {
+      return ;
+    } else if (response.statusCode == 401) {
+      throw UnauthorizedException('Token inválido ou expirado.');
+    } else {
+      print(Produto.toJsonList(produtos));
+      print(response.body);
+      throw Exception('Erro inserindo produtos.');
     }
   }
 }

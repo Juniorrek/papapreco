@@ -80,7 +80,9 @@ class _DefinirLocaliacaoWidgetState extends State<DefinirLocalizacaoWidget> {
 
     return TextButton(
         onPressed: () {
-          _navigateDefinirLocalizacaoPage(context);
+          if(!_isLoading && !_isBuscando) {
+            _navigateDefinirLocalizacaoPage(context);
+          }
         },
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

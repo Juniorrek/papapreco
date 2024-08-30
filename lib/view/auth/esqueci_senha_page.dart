@@ -2,43 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:papapreco/helper/error.dart';
 import 'package:papapreco/rest/auth_rest.dart';
 import 'package:papapreco/routes/routes.dart';
+import 'package:papapreco/view/auth/codigo_verificacao_page.dart';
 
-class EsqueciSenhaPage extends StatelessWidget {
-  EsqueciSenhaPage({super.key});
+class EsqueciSenhaPage extends StatefulWidget {
+  const EsqueciSenhaPage(
+      {super.key});
 
   static const String routeName = '/esqueci_senha';
 
+  @override
+  State<EsqueciSenhaPage> createState() => _EsqueciSenhaPageState();
+}
+
+class _EsqueciSenhaPageState extends State<EsqueciSenhaPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final AuthRest _authRest = AuthRest();
+  bool _isLoading = false;
 
-  void _enviarCodigo(context) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Impede o fechamento do diálogo ao clicar fora dele
-      builder: (BuildContext context) {
-        return const AlertDialog(
-          content: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Enviando código...'),
-            ],
-          ),
-        );
-      },
-    );
-    
+  Future<void> _enviarCodigo() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       Future.delayed(const Duration(seconds: 2));
 
       String email = _emailController.text;
       String retorno =
           await _authRest.recuperarSenhaGerarToken(email);
-
-      // Fechar o diálogo de carregamento
-      Navigator.of(context, rootNavigator: true).pop();
 
       if (retorno == 'OK') {
         bool enviado = await _authRest.enviarCodigoVerificacao(email, "REDEFINIR_SENHA");
@@ -61,6 +52,12 @@ class EsqueciSenhaPage extends StatelessWidget {
       }
     } catch (exception) {
       showError(context, "Erro ", exception.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -72,7 +69,9 @@ class EsqueciSenhaPage extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
+        child: _isLoading
+                            ? _loadingWidget()
+                            :Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -100,7 +99,7 @@ class EsqueciSenhaPage extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState?.validate() ?? false) {
-                      _enviarCodigo(context);
+                      _enviarCodigo();
                     }
                   },
                   child: const Text('Enviar código'),
@@ -109,5 +108,18 @@ class EsqueciSenhaPage extends StatelessWidget {
             )),
       ),
     );
+  }
+
+  Widget _loadingWidget() {
+    return const AlertDialog(
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Enviando código...'),
+            ],
+          ),
+        );
   }
 }

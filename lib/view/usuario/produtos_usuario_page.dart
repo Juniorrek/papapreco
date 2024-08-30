@@ -43,11 +43,11 @@ class _ProdutosUsuarioPageState extends State<ProdutosUsuarioPage> {
 
   List<Produto> _getProdutos() {
     // Simulação de dados
-    return [
-      Produto(1, 'Banana','', Decimal.parse(4.50.toString()), Localizacao.novo(-25.469680, -49.235317, ''), null, null),
-      Produto(2, 'Pão de Forma','', Decimal.parse(4.50.toString()), Localizacao.novo(-25.469780, -49.235417, ''), null, null)
+    return [];/*[
+      Produto(1, 'Banana','', Decimal.parse(4.50.toString()), Localizacao.novo(-25.469680, -49.235317, ''), null, null, null, null),
+      Produto(2, 'Pão de Forma','', Decimal.parse(4.50.toString()), Localizacao.novo(-25.469780, -49.235417, ''), null, null, null, null)
       // Adicione mais produtos conforme necessário
-    ];
+    ];*/
   }
 
   @override

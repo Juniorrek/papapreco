@@ -10,6 +10,7 @@ import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
 import 'package:papapreco/routes/routes.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ListarProdutosMapaPage extends StatefulWidget {
   final List<Produto> produtos;
@@ -32,7 +33,7 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
 
   bool isLoading = false;
 
-   final NumberFormat _moneyFormatter = NumberFormat.currency(
+  final NumberFormat _moneyFormatter = NumberFormat.currency(
     locale: 'pt_BR',
     symbol: 'R\$',
     decimalDigits: 2,
@@ -51,11 +52,15 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
   }
 
   LatLng _calcularCentroideProdutos(List<Produto> produtos) {
-    double latitude = (produtos.map<double>((p) => p.localizacao.latitude).reduce(max) +
+    double latitude = (produtos
+                .map<double>((p) => p.localizacao.latitude)
+                .reduce(max) +
             produtos.map<double>((p) => p.localizacao.latitude).reduce(min)) /
         2;
 
-    double longitude = (produtos.map<double>((p) => p.localizacao.longitude).reduce(max) +
+    double longitude = (produtos
+                .map<double>((p) => p.localizacao.longitude)
+                .reduce(max) +
             produtos.map<double>((p) => p.localizacao.longitude).reduce(min)) /
         2;
 
@@ -69,22 +74,24 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
       isLoading = true;
       for (var i = 0; i < widget.produtos.length; i++) {
         markers.add(Marker(
-            point:
-                LatLng(widget.produtos[i].localizacao.latitude, widget.produtos[i].localizacao.longitude),
+            point: LatLng(widget.produtos[i].localizacao.latitude,
+                widget.produtos[i].localizacao.longitude),
             width: 180,
             height: 180,
             child: GestureDetector(
                 child: const Icon(
                   Icons.location_on,
-                  size: 50,
+                  //color: Color(0xFFFFC531), // C
+                  size: 75,
                 ),
                 onTap: () {
-                  if (widget.fromDetail) {
+                  _showItem(context, i);
+                  /*if (widget.fromDetail) {
                     _showItem(context, i);
                   } else {
                     Navigator.pushNamed(context, Routes.detalheProduto,
                       arguments: <String, Object>{"idProduto": widget.produtos[i].id!});
-                  }
+                  }*/
                 })));
       }
 
@@ -102,87 +109,172 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
 
   void _showItem(BuildContext context, int index) {
     Produto produto = widget.produtos[index];
+    final Uri googleMapsUri = Uri(
+      scheme: 'https',
+      host: 'www.google.com',
+      path: 'maps/dir/',
+      queryParameters: {
+        'api': '1',
+        'destination':
+            '${produto.localizacao.latitude},${produto.localizacao.longitude}',
+      },
+    );
+
     showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-              title: Text(produto.nome),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Center(
+              child: Text(
+            produto.nome,
+            style: const TextStyle(
+              fontSize: 18.0,
+              fontWeight: FontWeight.bold,
+            ),
+          )),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Column(
                 children: [
-                  Column(children: [
-            Text(produto.localizacao.descricao ?? ""),
-            Text(_dataFormatter.format(produto.dataInsercao!)),
-                    Text(_moneyFormatter.format(produto.preco.toDouble()))])
+                  Text(
+                    produto.localizacao.descricao ?? "",
+                    style: const TextStyle(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  Text(
+                    _dataFormatter.format(produto.dataObservacao!),
+                    style: const TextStyle(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  Text(
+                    _moneyFormatter.format(produto.preco.toDouble()),
+                    style: const TextStyle(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
-              actions: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Builder(builder: (context) {
-                      if (widget.fromDetail) return const SizedBox.shrink();
+            ],
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Builder(
+                  builder: (context) {
+                    if (widget.fromDetail) return const SizedBox.shrink();
 
-                      return TextButton(
-                          child: const Text("Detalhes"),
+                    return Container(
+                        padding: const EdgeInsets.all(4.0),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFFFC531),
+                            width: 2.0,
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.description),
+                          iconSize: 30.0,
+                          color: Colors.black,
                           onPressed: () {
-                            Navigator.popAndPushNamed(context, Routes.detalheProduto,
-                                arguments: <String, Object>{
-                                  "idProduto": widget.produtos[index].id!
-                                });
-                          });
-                    }),
-                    TextButton(
-                        child: const Text("OK"),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        })
-                  ],
-                )
-              ]);
-        });
+                            Navigator.popAndPushNamed(
+                              context,
+                              Routes.detalheProduto,
+                              arguments: <String, Object>{
+                                "idProduto": widget.produtos[index].id!,
+                              },
+                            );
+                          },
+                        ));
+                  },
+                ),
+                Container(
+                  padding: const EdgeInsets.all(4.0),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFFFC531),
+                      width: 2.0,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.directions),
+                    color: Colors.black,
+                    iconSize: 30.0,
+                    onPressed: () async {
+                      if (await canLaunchUrl(googleMapsUri)) {
+                        await launchUrl(googleMapsUri);
+                      } else {
+                        throw 'Não foi possível abrir o Google Maps.';
+                      }
+                    },
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(4.0),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFFFC531),
+                      width: 2.0,
+                    ),
+                  ),
+                  child: TextButton(
+                    child: const Text("OK"),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final mapProvider = Provider.of<MapProvider>(context);
-    
-    if (!isLoading) {
-      return Scaffold(
-          appBar: AppBar(title: const Text("Papa Preço")),
-          body: Stack(
-            children: [
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: widget.produtos.isNotEmpty ? LatLng(widget.produtos[0].localizacao.latitude,
-                      widget.produtos[0].localizacao.longitude) : LatLng(mapProvider.latitude,
-                      mapProvider.longitude),
-                  initialZoom: map_lib.defaultZoom,
-                  cameraConstraint: CameraConstraint.contain(
-                    bounds: LatLngBounds(
-                      const LatLng(-90, -180),
-                      const LatLng(90, 180),
-                    ),
-                  ),
-                ),
-                children: [
-                  openStreetMapTileLayer,
-                  MarkerLayer(
-                    markers: _markers,
-                  ),
-                ],
-              )
-            ],
-          ));
-    } else {
-      return Scaffold(
-          appBar: AppBar(title: const Text("Papa Preço")),
-          body: Stack(
-            children: [_loadingMap()],
-          ));
-    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Papa Preço")),
+      body: isLoading ? _loadingMap() : _buildMap(mapProvider),
+    );
+  }
+
+  Widget _buildMap(MapProvider mapProvider) {
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: widget.produtos.isNotEmpty
+            ? LatLng(widget.produtos[0].localizacao.latitude,
+                widget.produtos[0].localizacao.longitude)
+            : LatLng(mapProvider.latitude, mapProvider.longitude),
+        initialZoom: map_lib.defaultZoom,
+        cameraConstraint: CameraConstraint.contain(
+          bounds: LatLngBounds(
+            const LatLng(-90, -180),
+            const LatLng(90, 180),
+          ),
+        ),
+      ),
+      children: [
+        openStreetMapTileLayer,
+        MarkerLayer(
+          markers: _markers,
+        ),
+      ],
+    );
   }
 
   Shimmer _loadingMap() {

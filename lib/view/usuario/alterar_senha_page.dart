@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:papapreco/exception/unauthorized_exception.dart';
 import 'package:papapreco/helper/error.dart';
 import 'package:papapreco/misc/auth/auth_provider.dart';
 import 'package:papapreco/model/usuario.dart';
@@ -21,40 +22,44 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
   final TextEditingController _currentPasswordController = TextEditingController();
   String _senha = '';
   final UsuarioRest _usuarioRest = UsuarioRest();
+  bool _isLoading = false;
+
 
   void _alterarSenha(context) async {
+    setState(() {
+      _isLoading = true;
+    });
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+
+    if (token == null) {
+      showError(context, "Erro", "Token de autenticação não encontrado.");
+      return;
+    }
+
     try {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-        String? token = authProvider.token;
-        Usuario? usuario = authProvider.usuario;
-
-        if (token == null || usuario == null) return;
-
+        Usuario usuario = authProvider.usuario!;
         usuario.senha = _senha;
-        Usuario? u = await _usuarioRest.alterarSenha(usuario, _currentPasswordController.text, token);
+        Usuario u = await _usuarioRest.alterarSenha(usuario, _currentPasswordController.text, token);
 
-        if (u == null) {
-          authProvider.logout();
-
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text("Login expirado!")));
-
-          //Navigator.pushReplacementNamed(context, Routes.home);
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            Routes.home,
-            (Route<dynamic> route) => false, // Remove todas as rotas da pilha
-          );
-        } else {
-
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text("Sucesso!")));
-              
-          Navigator.pop(context);
-        }
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Sucesso!")));
+            
+        Navigator.pop(context);
+        Navigator.pop(context);
+    } on UnauthorizedException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login expirado, entre novamente!')),
+      );
+      Navigator.pushNamed(context, Routes.login);
     } catch (exception) {
       showError(context, "Erro ", exception.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -99,12 +104,22 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
               }),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: _isLoading
+                            ? null
+                            :() {
                     if (_formKey.currentState?.validate() ?? false) {
                         _alterarSenha(context);
                       }
                   },
-                  child: const Text('Alterar Senha'),
+                  child: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.0,
+                                ),
+                              )
+                            : const Text('Alterar Senha'),
                 ),
               ],
             )),

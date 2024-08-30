@@ -131,7 +131,7 @@ class _LoginPageState extends State<LoginPage> {
       Routes.codigoVerificacao,
       arguments: <String, Object>{
         "email": email,
-        "tipo": TipoCodigoVerificacao.verificarEmail,
+        "tipo": "VERIFICAR_EMAIL",
       },
     );
   }

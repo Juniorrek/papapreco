@@ -1,14 +1,12 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:papapreco/helper/error.dart';
 import 'package:papapreco/misc/auth/auth_provider.dart';
 import 'package:papapreco/misc/auth/map_provider.dart';
 import 'package:papapreco/model/produto.dart';
 import 'package:papapreco/repositories/produto_repository.dart';
 import 'package:papapreco/routes/routes.dart';
-import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
 import 'package:papapreco/widgets/end_drawer.dart';
 import 'package:papapreco/widgets/map/definir_localizacao_widget.dart';
 import 'package:provider/provider.dart';
@@ -17,9 +15,7 @@ import 'package:shimmer/shimmer.dart';
 class ListarProdutosPage extends StatefulWidget {
   final String palavra;
 
-  const ListarProdutosPage(
-      {super.key,
-      required this.palavra});
+  const ListarProdutosPage({super.key, required this.palavra});
 
   static const String routeName = '/produtos';
 
@@ -32,11 +28,13 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
   final _palavraController = TextEditingController();
   final ProdutoRepository _repository = ProdutoRepository();
 
-   final NumberFormat _moneyFormatter = NumberFormat.currency(
+  final NumberFormat _moneyFormatter = NumberFormat.currency(
     locale: 'pt_BR',
     symbol: 'R\$',
     decimalDigits: 2,
   );
+  final NumberFormat _priceFormatter = NumberFormat('###0.00', 'pt_BR');
+
 
   List<Produto> _lista = <Produto>[];
 
@@ -56,9 +54,6 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
 
       _refreshList(provider.latitude, provider.longitude, provider.distancia);
     });
-
-
-    //_setLocalizacaoAtual(widget.latitude, widget.longitude);
   }
 
   @override
@@ -71,9 +66,8 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
       _isLoading = true;
     });
 
-    //await Future.delayed(Duration(seconds: 3));
-
-    List<Produto> tempList = await _buscarProdutosPorNome(latitude, longitude, distancia);
+    List<Produto> tempList =
+        await _buscarProdutosPorNome(latitude, longitude, distancia);
 
     setState(() {
       _lista = tempList;
@@ -81,16 +75,22 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
     });
   }
 
-  Future<List<Produto>> _buscarProdutosPorNome(double latitude, double longitude, double distancia) async {
+  Future<List<Produto>> _buscarProdutosPorNome(
+      double latitude, double longitude, double distancia) async {
     List<Produto> tempLista = <Produto>[];
 
     try {
-      tempLista = await _repository.ranking(_palavraController.text, latitude,
-          longitude, distancia, _precoMin ?? Decimal.fromInt(0), _precoMax ?? Decimal.fromInt(999999999));
+      tempLista = await _repository.ranking(
+          _palavraController.text,
+          latitude,
+          longitude,
+          distancia,
+          _precoMin ?? Decimal.fromInt(0),
+          _precoMax ?? Decimal.fromInt(999999999));
     } catch (exception) {
-      if(mounted) {
+      if (mounted) {
         showError(
-          context, "Erro obtendo lista de produtos", exception.toString());
+            context, "Erro obtendo lista de produtos", exception.toString());
       }
     }
 
@@ -102,63 +102,105 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
 
     return ListTile(
       leading: Container(
-    width: 80.0, // Largura fixa do leading
-    height: 50.0, // Altura fixa do leading
-    alignment: Alignment.center,
-    child:Text(_moneyFormatter.format(p.preco.toDouble()), style: const TextStyle(fontSize: 16.0))),
+          width: 80.0,
+          height: 50.0,
+          alignment: Alignment.center,
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'R\$',
+                  style: TextStyle(
+                    fontSize: 16.0, 
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+                 Flexible(child:Text(
+                  _priceFormatter.format(p.preco.toDouble()),
+                  style: const TextStyle(
+                    fontSize: 18.0, 
+                    fontWeight: FontWeight.bold,
+                  ),
+                )),
+              ],
+            ),
+          ),
       title: Text(p.nome),
-      subtitle: Text(p.localizacao.descricao ?? ''),//Text(_moneyFormatter.format(p.preco.toDouble())),
-      onTap: () async {
-        await Navigator.pushNamed(context, Routes.detalheProduto,
-            arguments: <String, Object>{"idProduto": _lista[index].id!});
-
-        if (!context.mounted) return;
-
-        //_refreshList();
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(p.localizacao.descricao ?? '',
+              style: const TextStyle(
+                    fontWeight: FontWeight.normal,
+                  )),
+          Row(
+            children: [
+              const Icon(Icons.location_on, size: 16.0),
+              Text('~${p.distanciaRelativa?.toStringAsFixed(2)}km',
+              style: const TextStyle(
+                    fontWeight: FontWeight.normal,
+                  )),
+            ],
+          ),
+          Row(
+            children: [
+              const Icon(Icons.calendar_today, size: 16.0),
+              const SizedBox(width: 4),
+              Text(p.dataRelativa ?? '',
+              style: const TextStyle(
+                    fontWeight: FontWeight.normal,
+                  )),
+            ],
+          ),
+        ],
+      ),
+      onTap: () {
+        Navigator.pushNamed(context, Routes.detalheProduto,
+            arguments: <String, Object>{"idProduto": p.id!});
       },
       trailing: PopupMenuButton<String>(
-    icon: const Icon(Icons.more_vert), // Ícone para o botão do menu pop-up
-    onSelected: (String value) {
-      final isLoggedIn = Provider.of<AuthProvider>(context, listen: false).isLoggedIn;
-      if (value == 'edit') {
-        if (!isLoggedIn) {
-          ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Você precisa estar logado.')));
-        }
-      } else if (value == 'map') {
-        Navigator.pushNamed(context, Routes.listarProdutosMapa,
-        arguments: <String, Object>{
-          "produtos": List.filled(1, p),
-          "fromDetail": false
-        });
-      }
-    },
-    itemBuilder: (BuildContext context) {
-
-      return [
-        const PopupMenuItem<String>(
-          value: 'edit',
-          child: Row(
-            children: [
-              Icon(Icons.edit), 
-              SizedBox(width: 8), 
-              Text('Sugerir novo preço'),
-            ],
-          ),
-        ),
-        const PopupMenuItem<String>(
-          value: 'map',
-          child: Row(
-            children: [
-              Icon(Icons.pin_drop),
-              SizedBox(width: 8), 
-              Text('Ver no mapa'),
-            ],
-          ),
-        ),
-      ];
-    },
-  ),
+        icon: const Icon(Icons.more_vert),
+        onSelected: (String value) {
+          final isLoggedIn =
+              Provider.of<AuthProvider>(context, listen: false).isLoggedIn;
+          if (value == 'edit') {
+            if (!isLoggedIn) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Você precisa estar logado.')));
+            }
+          } else if (value == 'map') {
+            Navigator.pushNamed(context, Routes.listarProdutosMapa,
+                arguments: <String, Object>{
+                  "produtos": List.filled(1, p),
+                  "fromDetail": false
+                });
+          }
+        },
+        itemBuilder: (BuildContext context) {
+          return [
+            const PopupMenuItem<String>(
+              value: 'edit',
+              child: Row(
+                children: [
+                  Icon(Icons.edit),
+                  SizedBox(width: 8),
+                  Text('Sugerir novo preço'),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: 'map',
+              child: Row(
+                children: [
+                  Icon(Icons.pin_drop),
+                  SizedBox(width: 8),
+                  Text('Ver no mapa'),
+                ],
+              ),
+            ),
+          ];
+        },
+      ),
     );
   }
 
@@ -177,11 +219,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
           "localizacaoString": mapProvider.localizacaoString
         }) as Map<String, Object?>?;
 
-    //clicou em retornar
     if (result == null) return;
-
-    // When a BuildContext is used from a StatefulWidget, the mounted property
-    // must be checked after an asynchronous gap.
     if (!context.mounted) return;
 
     setState(() {
@@ -195,40 +233,42 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
       mapProvider.setLocalizacaoString(result['localizacaoString']);
     });
 
-    _refreshList(mapProvider.latitude, mapProvider.longitude, result['distancia']);
+    _refreshList(
+        mapProvider.latitude, mapProvider.longitude, result['distancia']);
     mapProvider.setDistancia(result['distancia']);
   }
 
   @override
   Widget build(BuildContext context) {
     final mapProvider = Provider.of<MapProvider>(context);
+    final isLoggedIn = context.read<AuthProvider>().isLoggedIn;
 
     return Scaffold(
         appBar: AppBar(
             title: const Text("Papa Preço"),
             leading: BackButton(
-                onPressed: () => Navigator.pop(context, <String, Object>{
-                      "palavra": _palavraController.text
-                    }))),
-      endDrawer:
-          context.watch<AuthProvider>().isLoggedIn ? const EndDrawer() : null,
-        floatingActionButton: context.watch<AuthProvider>().isLoggedIn ? FloatingActionButton(
-          onPressed: () async {
-            /*await Navigator.pushNamed(
-                context, Routes.cadastrarProduto,
-                arguments: <String, Object>{
-                  "latitude": _latitude,
-                  "longitude": _longitude,
-                  "localizacao": _localizacaoAtual,
-                });
-            if (!context.mounted) return;
-            _refreshList();*/
-          },
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.green,
-          shape: const CircleBorder(),
-          child: const Icon(Icons.plus_one),
-        ) : null,
+                onPressed: () => Navigator.pop(context,
+                    <String, Object>{"palavra": _palavraController.text}))),
+        endDrawer: isLoggedIn ? const EndDrawer() : null,
+        floatingActionButton: isLoggedIn
+            ? FloatingActionButton(
+                onPressed: () async {
+                  await Navigator.pushNamed(context, Routes.cadastrarProduto,
+                      arguments: <String, Object>{
+                        "latitude": mapProvider.latitude,
+                        "longitude": mapProvider.longitude,
+                        "localizacaoString": mapProvider.localizacaoString,
+                      });
+                  if (!context.mounted) return;
+                  _refreshList(mapProvider.latitude, mapProvider.longitude,
+                      mapProvider.distancia);
+                },
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.green,
+                shape: const CircleBorder(),
+                child: const Icon(Icons.plus_one),
+              )
+            : null,
         body: Column(
           children: [
             Form(
@@ -251,19 +291,19 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                           },
                         )),
                     Consumer<MapProvider>(
-                    builder: (context, mapProvider, child) {
-                      return DefinirLocalizacaoWidget(
-                          latitude: mapProvider.latitude,
-                          longitude: mapProvider.longitude,
-                          localizacaoString: mapProvider.localizacaoString,
-                          distancia: mapProvider.distancia,
-                          onData: (lat, lng, loc) {
-                            mapProvider.setLatitude(lat);
-                            mapProvider.setLongitude(lng);
-                            mapProvider.setLocalizacaoString(loc);
-                          });
-                    },
-                  ),
+                      builder: (context, mapProvider, child) {
+                        return DefinirLocalizacaoWidget(
+                            latitude: mapProvider.latitude,
+                            longitude: mapProvider.longitude,
+                            localizacaoString: mapProvider.localizacaoString,
+                            distancia: mapProvider.distancia,
+                            onData: (lat, lng, loc) {
+                              mapProvider.setLatitude(lat);
+                              mapProvider.setLongitude(lng);
+                              mapProvider.setLocalizacaoString(loc);
+                            });
+                      },
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -282,7 +322,8 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                         ElevatedButton(
                           onPressed: () {
                             if (_formKey.currentState!.validate()) {
-                              _refreshList(mapProvider.latitude, mapProvider.longitude, mapProvider.distancia);
+                              _refreshList(mapProvider.latitude,
+                                  mapProvider.longitude, mapProvider.distancia);
                             }
                           },
                           child: const Text('Pesquisar'),
@@ -297,12 +338,23 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                     ),
                   ],
                 )),
+            const Divider(),
             Expanded(
-                child: _isLoading ? ListView.builder(
-                  itemCount: 10, // Número de itens de placeholder
-                  itemBuilder: (context, index) => _shimmerListTile(),
-                )
-                  : ListView.builder(itemCount: _lista.length, itemBuilder: _buildItem))
+                child: _isLoading
+                    ? ListView.builder(
+                        itemCount: 10,
+                        itemBuilder: (context, index) => _shimmerListTile(),
+                      )
+                    : ListView.builder(
+                        itemCount: _lista.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          return Column(
+                            children: [
+                              _buildItem(context, index),
+                              if (index < _lista.length - 1) const Divider(),
+                            ],
+                          );
+                        }))
           ],
         ));
   }
@@ -313,12 +365,12 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
       highlightColor: Colors.grey[100]!,
       child: ListTile(
         leading: Container(
-          width: 50.0,
+          width: 80.0,
           height: 50.0,
           color: Colors.white,
         ),
         title: Container(
-          height: 20.0,
+          height: 16.0,
           color: Colors.white,
         ),
         subtitle: Container(

@@ -1,19 +1,29 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
+import 'package:papapreco/exception/unauthorized_exception.dart';
 import 'package:papapreco/helper/error.dart';
+import 'package:papapreco/misc/auth/auth_provider.dart';
+import 'package:papapreco/misc/auth/map_provider.dart';
 import 'package:papapreco/model/localizacao.dart';
 import 'package:papapreco/model/produto.dart';
 import 'package:papapreco/repositories/produto_repository.dart';
 import 'package:papapreco/routes/routes.dart';
 import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
+import 'package:papapreco/view/produto/filtrar_produtos_page.dart';
+import 'package:papapreco/widgets/map/definir_localizacao_widget.dart';
+import 'package:provider/provider.dart';
 
 class CadastrarProdutoPage extends StatefulWidget {
   final double latitude;
   final double longitude;
-  final String localizacao;
+  final String localizacaoString;
 
-  const CadastrarProdutoPage({super.key, required this.latitude, required this.longitude, required this.localizacao});
+  const CadastrarProdutoPage(
+      {super.key,
+      required this.latitude,
+      required this.longitude,
+      required this.localizacaoString});
 
   static const String routeName = '/produtos/cadastrar';
 
@@ -28,11 +38,10 @@ class _CadastrarProdutoPageState extends State<CadastrarProdutoPage> {
   final _descricaoController = TextEditingController();
   final ProdutoRepository _repository = ProdutoRepository();
 
-
-  String _localizacaoAtual = '';
+  String _localizacaoString = '';
   late double _latitude;
   late double _longitude;
-
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -41,7 +50,7 @@ class _CadastrarProdutoPageState extends State<CadastrarProdutoPage> {
     setState(() {
       _latitude = widget.latitude;
       _longitude = widget.longitude;
-      _localizacaoAtual = widget.localizacao;
+      _localizacaoString = widget.localizacaoString;
     });
   }
 
@@ -51,25 +60,57 @@ class _CadastrarProdutoPageState extends State<CadastrarProdutoPage> {
   }
 
   void _cadastrarProduto() async {
+    setState(() {
+      _isLoading = true;
+    });
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+
+    if (token == null) {
+      showError(context, "Erro", "Token de autenticação não encontrado.");
+      return;
+    }
+
     try {
-      Produto novoProduto = Produto.novo(_nomeProdutoController.text, 
-                              _descricaoController.text, 
-                              Decimal.parse(_precoController.text), 
-                              Localizacao.novo(_latitude, _longitude, ''));
+      String novoPrecoTexto = _precoController.text
+          .replaceAll('R\$', '')
+          .replaceAll('.', '')
+          .replaceAll(',', '.')
+          .trim();
 
-      novoProduto = await _repository.inserir(novoProduto);
+      Produto novoProduto = Produto.novo(
+          _nomeProdutoController.text,
+          _descricaoController.text,
+          Decimal.parse(novoPrecoTexto),
+          Localizacao.novo(_latitude, _longitude, _localizacaoString),
+          DateTime.now(),
+          DateTime.now(),
+          authProvider.usuario!);
 
+      novoProduto = await _repository.inserir(novoProduto, token);
 
-    if (!mounted) return;
+      if (!mounted) return;
       Navigator.pop(context);
+    } on UnauthorizedException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login expirado, entre novamente!')),
+      );
+      Navigator.pushNamed(context, Routes.login);
     } catch (exception) {
       showError(context, "Erro inserindo produto", exception.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: const Text("Papa Preço"),
           //automaticallyImplyLeading: false,
@@ -85,35 +126,10 @@ class _CadastrarProdutoPageState extends State<CadastrarProdutoPage> {
         ),
         body: Column(
           children: [
-            _cadastrarPage()
+            Padding(
+                padding: const EdgeInsets.all(10.0), child: _cadastrarPage())
           ],
         ));
-  }
-
-  void _setLocalizacaoAtual(double latitude, double longitude) async {
-    String reverseGeocodingString =
-        await map_lib.reverseGeocodingString(latitude, longitude);
-    setState(() {
-      _localizacaoAtual = reverseGeocodingString;
-    });
-  }
-
-  _navigateDefinirLocalizacaoPage(context) async {
-    final LatLong result = await Navigator.pushNamed(
-        context, Routes.definirLocalizacao,
-        arguments: <String, Object>{
-          "latitude": _latitude,
-          "longitude": _longitude,
-        }) as LatLong;
-
-    // When a BuildContext is used from a StatefulWidget, the mounted property
-    // must be checked after an asynchronous gap.
-    if (!context.mounted) return;
-
-    _latitude = result.latitude;
-    _longitude = result.longitude;
-
-    _setLocalizacaoAtual(result.latitude, result.longitude);
   }
 
   Row _cadastrarPage() {
@@ -126,78 +142,99 @@ class _CadastrarProdutoPageState extends State<CadastrarProdutoPage> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    const Text("Produto"),
-                    Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 8),
-                        child: TextFormField(
-                          decoration: const InputDecoration(
-                            border:
-                                OutlineInputBorder(), /*labelText: 'Produto:'*/
-                          ),
-                          controller: _nomeProdutoController,
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return 'Campo não pode ser vazio';
-                            }
-                            return null;
-                          },
-                        )),
-                    const Text("Localizacao"),
-                        TextButton(
-                        onPressed: () {
-                          _navigateDefinirLocalizacaoPage(context);
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Flexible(child: Text(_localizacaoAtual)),
-                            const Icon(Icons.arrow_drop_down)
-                          ],
-                        )),
-                    const Text("Novo Preço"),
-                    Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 8),
-                        child: TextFormField(
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border:
-                                OutlineInputBorder(), /*labelText: 'Produto:'*/
-                          ),
-                          controller: _precoController,
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return 'Campo não pode ser vazio';
-                            }
-                            return null;
-                          },
-                        )),
-                    const Text("Descrição"),
-                    Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 8),
-                        child: TextFormField(
-                          decoration: const InputDecoration(
-                            border:
-                                OutlineInputBorder(), /*labelText: 'Produto:'*/
-                          ),
-                          controller: _descricaoController,
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return 'Campo não pode ser vazio';
-                            }
-                            return null;
-                          }
-                        )),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _cadastrarProduto();
+                    const Text("Produto",
+                        style: TextStyle(
+                            fontSize: 20.0, fontWeight: FontWeight.bold)),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(), /*labelText: 'Produto:'*/
+                      ),
+                      controller: _nomeProdutoController,
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Campo não pode ser vazio';
                         }
+                        return null;
                       },
-                      child: const Text('Cadastrar'),
                     ),
+                    const SizedBox(height: 20),
+                    const Text("Localizacao",
+                        style: TextStyle(
+                            fontSize: 20.0, fontWeight: FontWeight.bold)),
+                    Consumer<MapProvider>(
+                      builder: (context, mapProvider, child) {
+                        return DefinirLocalizacaoWidget(
+                            latitude: _latitude,
+                            longitude: _longitude,
+                            localizacaoString: _localizacaoString,
+                            onData: (lat, lng, loc) {
+                              setState(() {
+                                _latitude = lat;
+                                _longitude = lng;
+                                _localizacaoString = loc;
+                              });
+                            });
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    const Text("Novo Preço",
+                        style: TextStyle(
+                            fontSize: 20.0, fontWeight: FontWeight.bold)),
+                    TextFormField(
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        MoneyInputFormatter(),
+                      ],
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(), /*labelText: 'Produto:'*/
+                      ),
+                      controller: _precoController,
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Campo não pode ser vazio';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    const Text("Descrição",
+                        style: TextStyle(
+                            fontSize: 20.0, fontWeight: FontWeight.bold)),
+                    TextFormField(
+                        decoration: const InputDecoration(
+                          border:
+                              OutlineInputBorder(), /*labelText: 'Produto:'*/
+                        ),
+                        controller: _descricaoController,
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Campo não pode ser vazio';
+                          }
+                          return null;
+                        }),
+                    const SizedBox(height: 20),
+                    Row(children: [
+                      Expanded(
+                          child: OutlinedButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                if (_formKey.currentState!.validate()) {
+                                  _cadastrarProduto();
+                                }
+                              },
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.0,
+                                ),
+                              )
+                            : const Text('Cadastrar'),
+                      ))
+                    ]),
                   ],
                 )),
           ],

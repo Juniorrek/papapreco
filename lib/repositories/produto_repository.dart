@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:papapreco/model/produto.dart';
+import 'package:papapreco/model/usuario.dart';
 import 'package:papapreco/rest/produto_rest.dart';
 
 class ProdutoRepository {
@@ -30,11 +31,15 @@ class ProdutoRepository {
     return await api.historico(nome, latitude, longitude);
   }*/
 
-  Future<List<Produto>> buscarPorUrlQrNFCeFazenda(String urlQr) async {
-    return await api.buscarPorUrlQrNFCeFazenda(urlQr);
+  Future<List<Produto>> buscarPorUrlQrNFCeFazenda(String urlQr, Usuario u) async {
+    return await api.buscarPorUrlQrNFCeFazenda(urlQr, u);
   }
 
-  Future<Produto> inserir(Produto produto) async {
-    return await api.inserir(produto);
+  Future<Produto> inserir(Produto produto, String token) async {
+    return await api.inserir(produto, token);
+  }
+
+  Future<void> inserirLista(List<Produto> produtos, String token) async {
+    return await api.inserirLista(produtos, token);
   }
 }

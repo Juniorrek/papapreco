@@ -6,10 +6,12 @@ import 'package:papapreco/view/auth/esqueci_senha_redefinicao_page.dart';
 import 'package:papapreco/view/auth/login_page.dart';
 import 'package:papapreco/view/definir_localizacao_page.dart';
 import 'package:papapreco/view/produto/cadastrar_produto_page.dart';
-import 'package:papapreco/view/produto/confirmar_digitalizacao_page.dart';
+import 'package:papapreco/view/produto/qr/confirmar_digitalizacao_page.dart';
 import 'package:papapreco/view/produto/detalhe_produto_page.dart';
-import 'package:papapreco/view/produto/digitalizar_nota_page.dart';
+import 'package:papapreco/view/produto/qr/digitalizar_nota_page.dart';
 import 'package:papapreco/view/produto/filtrar_produtos_page.dart';
+import 'package:papapreco/view/produto/qr/editar_digitalizacao_page.dart';
+import 'package:papapreco/view/produto/qr/inserir_qrcode_page.dart';
 import 'package:papapreco/view/produto/listar_produtos_mapa_page.dart';
 import 'package:papapreco/view/produto/listar_produtos_page.dart';
 import 'package:papapreco/view/produto/sugerir_edicao_page.dart';
@@ -31,7 +33,9 @@ class Routes {
   static const String definirLocalizacao = DefinirLocalizacaoPage.routeName;
 
   static const String digitalizarNota = DigitalizarNotaPage.routeName;
+  static const String inserirQr = InserirQrcodePage.routeName;
   static const String confirmarDigitalizacao = ConfirmarDigitalizacaoPage.routeName;
+  static const String editarDigitalizacaoPage = EditarDigitalizacaoPage.routeName;
 
   static const String login = LoginPage.routeName;
   static const String cadastro = CadastroPage.routeName;

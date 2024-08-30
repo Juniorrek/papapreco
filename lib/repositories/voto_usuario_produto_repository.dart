@@ -8,11 +8,15 @@ class VotoUsuarioProdutoRepository {
     return await api.buscarPorId(id);
   }
 
-  Future<VotoUsuarioProduto> votar(int produtoId, int usuarioId, bool voto) async {
-    return await api.votar(produtoId, usuarioId, voto);
+  Future<VotoUsuarioProduto> votar(int produtoId, int usuarioId, bool voto, String accessToken) async {
+    return await api.votar(produtoId, usuarioId, voto, accessToken);
   }
 
-  Future<VotoUsuarioProduto> mudarVoto(int produtoId, int usuarioId, bool novoVoto) async {
-    return await api.mudarVoto(produtoId, usuarioId, novoVoto);
+  Future<VotoUsuarioProduto> mudarVoto(int produtoId, int usuarioId, bool novoVoto, String accessToken) async {
+    return await api.mudarVoto(produtoId, usuarioId, novoVoto, accessToken);
+  }
+
+  Future<void> cancelarVoto(int produtoId, int usuarioId, String accessToken) async {
+    return await api.cancelarVoto(produtoId, usuarioId, accessToken);
   }
 }

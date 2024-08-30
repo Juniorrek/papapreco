@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
 import 'package:papapreco/model/localizacao.dart';
+import 'package:papapreco/model/usuario.dart';
 import 'package:papapreco/model/voto_usuario_produto.dart';
 
 class Produto {
@@ -10,17 +11,22 @@ class Produto {
   String? descricao;
   Decimal preco;
   Localizacao localizacao;
-  DateTime? dataInsercao;
+  DateTime dataInsercao;
+  DateTime dataObservacao;
   List<VotoUsuarioProduto>? votos;
+  Usuario? usuario;
 
-  Produto(this.id, this.nome, this.descricao, this.preco, this.localizacao, this.dataInsercao, this.votos);
-  Produto.novo(this.nome, this.descricao, this.preco, this.localizacao);
+  double? distanciaRelativa;
+  String? dataRelativa;
+
+  Produto(this.id, this.nome, this.descricao, this.preco, this.localizacao, this.dataInsercao, this.dataObservacao, this.votos, this.distanciaRelativa, this.dataRelativa, this.usuario);
+  Produto.novo(this.nome, this.descricao, this.preco, this.localizacao, this.dataInsercao, this.dataObservacao, this.usuario);
 
   bool usuarioJaVotou(int idUsuario) {
     return votos != null ? votos!.any((v) => v.usuarioId == idUsuario) : false;
   }
-  bool usuarioJaVotouVoto(int idUsuario, bool voto) {
-    return votos != null ? votos!.any((v) => v.usuarioId == idUsuario && v.voto == voto) : false;
+  bool usuarioJaVotouVoto(int? idUsuario, bool voto) {
+    return votos != null && idUsuario != null ? votos!.any((v) => v.usuarioId == idUsuario && v.voto == voto) : false;
   }
   int qntVotos(bool voto) {
     return votos != null ? votos!.where((v) => v.voto == voto).length : 0;
@@ -32,8 +38,10 @@ class Produto {
       'nome': nome,
       'descricao': descricao,
       'preco': preco,
-      'localizacao': localizacao,
-      'dataInsercao': dataInsercao?.toIso8601String()
+      'localizacao': localizacao.toMap(),
+      'dataInsercao': dataInsercao.toIso8601String(),
+      'dataObservacao': dataObservacao.toIso8601String(),
+      'usuario': usuario?.toMap()
     };
   }
   static Produto fromMap(Map<String, dynamic> map) {
@@ -43,8 +51,12 @@ class Produto {
       map['descricao'],
       Decimal.parse(map['preco'].toString()),
       Localizacao.fromMap(map['localizacao']),
-      map['dataInsercao'] == null ? null : DateTime.parse(map['dataInsercao']),
-      map['votos'] == null ? null : VotoUsuarioProduto.fromMaps(List<Map<String, dynamic>>.from(map['votos']))
+      DateTime.parse(map['dataInsercao']),
+      DateTime.parse(map['dataObservacao']),
+      map['votos'] == null ? null : VotoUsuarioProduto.fromMaps(List<Map<String, dynamic>>.from(map['votos'])),
+      map['distanciaRelativa'],
+      map['dataRelativa'],
+      Usuario.fromMap(map['usuario'])
     );
   }
 
@@ -56,4 +68,9 @@ class Produto {
   }
   
   String toJson() => jsonEncode(toMap());
+
+  static String toJsonList(List<Produto> produtos) {
+    final List<Map<String, dynamic>> produtoMapList = produtos.map((produto) => produto.toMap()).toList();
+    return jsonEncode(produtoMapList);
+  }
 }

@@ -10,42 +10,52 @@ class EndDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final usuario = context.read<AuthProvider>().usuario!;
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+      child: Column(
         children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(
-              color: Colors.blue,
-            ),
-            child: Row(
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
               children: [
-                const Icon(Icons.person, size: 80, color: Colors.white),
-                const SizedBox(width: 16),
-                Expanded(child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(usuario.nome, style: const TextStyle(color: Colors.white, fontSize: 24)),
-                    const SizedBox(height: 8),
-                    Text(usuario.email, style: const TextStyle(color: Colors.white70, fontSize: 16)),
-                  ],
-                )),
+                DrawerHeader(
+                  decoration: const BoxDecoration(
+                    color: Colors.blue,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.person, size: 80, color: Colors.white),
+                      const SizedBox(width: 16),
+                      Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(usuario.nome, style: const TextStyle(color: Colors.white, fontSize: 24)),
+                          const SizedBox(height: 8),
+                          Text(usuario.email, style: const TextStyle(color: Colors.white70, fontSize: 16)),
+                        ],
+                      )),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.home),
+                  title: const Text('Home'),
+                  onTap: () {
+                    Navigator.pushReplacementNamed(context, Routes.home);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.key),
+                  title: const Text('Alterar senha'),
+                  onTap: () {
+                    Navigator.pushNamed(context, Routes.alterarSenha);
+                  },
+                ),
+                // Other list tiles if any
               ],
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('Home'),
-            onTap: () {
-              Navigator.pushReplacementNamed(context, Routes.home);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text('Alterar senha'),
-            onTap: () {
-              Navigator.pushNamed(context, Routes.alterarSenha);
-            },
-          ),
+          // Add a Spacer to push the logout button to the bottom
+          const Spacer(),
+          const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Logout'),

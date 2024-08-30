@@ -56,6 +56,8 @@ dependencies:
   #google_sign_in_web: ^0.12.4+2
   flutter_native_splash: ^2.4.1
   flutter_masked_text2: ^0.9.1
+  url_launcher: ^6.3.0
+  #http_interceptor: ^2.0.0
 
 dev_dependencies:
   flutter_test:

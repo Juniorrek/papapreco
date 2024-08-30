@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
 import 'package:papapreco/misc/auth/auth_provider.dart';
 import 'package:papapreco/misc/auth/map_provider.dart';
 import 'package:papapreco/theme/theme.dart';
@@ -11,13 +9,14 @@ import 'package:papapreco/view/auth/esqueci_senha_redefinicao_page.dart';
 import 'package:papapreco/view/auth/login_page.dart';
 import 'package:papapreco/view/definir_localizacao_page.dart';
 import 'package:papapreco/view/produto/cadastrar_produto_page.dart';
-import 'package:papapreco/view/produto/confirmar_digitalizacao_page.dart';
+import 'package:papapreco/view/produto/qr/confirmar_digitalizacao_page.dart';
 import 'package:papapreco/view/produto/detalhe_produto_page.dart';
-import 'package:papapreco/view/produto/digitalizar_nota_page.dart';
+import 'package:papapreco/view/produto/qr/digitalizar_nota_page.dart';
 import 'package:papapreco/view/produto/filtrar_produtos_page.dart';
+import 'package:papapreco/view/produto/qr/editar_digitalizacao_page.dart';
+import 'package:papapreco/view/produto/qr/inserir_qrcode_page.dart';
 import 'package:papapreco/view/produto/listar_produtos_mapa_page.dart';
 import 'package:papapreco/view/produto/listar_produtos_page.dart';
-import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
 import 'package:papapreco/view/produto/sugerir_edicao_page.dart';
 import 'package:papapreco/view/usuario/alterar_senha_page.dart';
 import 'package:papapreco/widgets/end_drawer.dart';
@@ -33,7 +32,7 @@ void main() {
         ChangeNotifierProvider(
           create: (context) {
             final auth = AuthProvider();
-            auth.loadUser(); // Carrega o estado do usuário ao iniciar
+            auth.loadUser();
             return auth;
           },
         ),
@@ -53,6 +52,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Papa Preço',
@@ -60,28 +60,16 @@ class MyApp extends StatelessWidget {
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           return const MyHomePage(title: 'Papa Preço');
-          /*if (auth.isLoggedIn) {
-            return HomePage();
-          } else {
-            return LoginPage();
-          }*/
         },
       ),
       routes: {
         Routes.home: (context) => const MyHomePage(title: 'Papa Preço'),
-        //Routes.listarProdutos: (context) => const ListarProdutosPage(),
-        //paginas com parametro nao precisam ser declaradas aqui ja que estao embaixos
-        //Routes.listarProdutosMapa: (context) => const ListarProdutosMapaPage(),
-        //Routes.definirLocalizacao: (context) => const DefinirLocalizacaoPage(),
         Routes.digitalizarNota: (context) => const DigitalizarNotaPage(),
         Routes.login: (context) => const LoginPage(),
         Routes.cadastro: (context) => const CadastroPage(),
         Routes.esqueciSenha: (context) => EsqueciSenhaPage(),
         Routes.alterarSenha: (context) => const AlterarSenhaPage(),
-        //Routes.produtosUsuario: (context) => ProdutosUsuarioPage(),//DESISTI, SEM FUNCIONALIDADE
-        /*Routes.esqueciSenhaCodigo: (context) => EsqueciSenhaCodigoPage(email: '',),
-        Routes.esqueciSenhaRedefinicao: (context) =>
-            const EsqueciSenhaRedefinicaoPage()*/
+        Routes.inserirQr: (context) => const InserirQrcodePage(),
       },
       onGenerateRoute: (settings) {
         final Map args = settings.arguments as Map<String, Object?>;
@@ -94,7 +82,7 @@ class MyApp extends StatelessWidget {
           Routes.cadastrarProduto: (ctx) => CadastrarProdutoPage(
               latitude: args["latitude"],
               longitude: args["longitude"],
-              localizacao: args["localizacao"]),
+              localizacaoString: args["localizacaoString"]),
           Routes.detalheProduto: (ctx) =>
               DetalheProdutoPage(idProduto: args["idProduto"]),
           Routes.sugerirEdicao: (ctx) =>
@@ -114,10 +102,11 @@ class MyApp extends StatelessWidget {
           Routes.confirmarDigitalizacao: (ctx) =>
               ConfirmarDigitalizacaoPage(urlQr: args["urlQr"]),
           Routes.codigoVerificacao: (ctx) =>
-              CodigoVerificacaoPage(email: args["email"],
-              tipo: args["tipo"]),
+              CodigoVerificacaoPage(email: args["email"], tipo: args["tipo"]),
           Routes.esqueciSenhaRedefinicao: (ctx) => EsqueciSenhaRedefinicaoPage(
-              email: args["email"], token: args["token"]),
+              email: args["email"], codigo: args["codigo"]),
+          Routes.editarDigitalizacaoPage: (ctx) => EditarDigitalizacaoPage(
+              produto: args["produto"])
         };
 
         WidgetBuilder builder = routes[settings.name];
@@ -158,8 +147,6 @@ class _MyHomePageState extends State<MyHomePage> {
               arguments: <String, Object>{"palavra": _palavraController.text})
           as Map<String, Object>;
 
-      // When a BuildContext is used from a StatefulWidget, the mounted property
-      // must be checked after an asynchronous gap.
       if (!context.mounted) return;
 
       setState(() {
@@ -168,16 +155,16 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
       ),
-      endDrawer: context.watch<AuthProvider>().isLoggedIn ? const EndDrawer() : null,
+      endDrawer:
+          context.watch<AuthProvider>().isLoggedIn ? const EndDrawer() : null,
       body: Column(
         children: <Widget>[
-          // Primeira Seção
           Container(
             padding: const EdgeInsets.all(8.0),
             child: const Column(
@@ -193,55 +180,56 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
           ),
-          const SizedBox(height: 20), // Espaço entre seções
-
-          // Segunda Seção
+          const SizedBox(height: 20),
           Expanded(
             flex: 1,
             child: SingleChildScrollView(
               child: Form(
-              key: _formKey,
-              child: Column(
-                children: <Widget>[
-                  Text(
-                    'Produto:',
-                    style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    child: TextFormField(
-                      decoration: const InputDecoration(border: OutlineInputBorder()),
-                      controller: _palavraController,
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return 'Campo não pode ser vazio';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  Consumer<MapProvider>(
-                    builder: (context, mapProvider, child) {
-                      return DefinirLocalizacaoWidget(
-                        latitude: mapProvider.latitude,
-                        longitude: mapProvider.longitude,
-                        localizacaoString: mapProvider.localizacaoString,
-                        distancia: mapProvider.distancia,
-                        onData: (lat, lng, loc) {
-                          mapProvider.setLatitude(lat);
-                          mapProvider.setLongitude(lng);
-                          mapProvider.setLocalizacaoString(loc);
+                  key: _formKey,
+                  child: Column(
+                    children: <Widget>[
+                      const Text(
+                        'Produto:',
+                        style: TextStyle(
+                            fontSize: 20.0, fontWeight: FontWeight.bold),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 8),
+                        child: TextFormField(
+                          decoration: const InputDecoration(
+                              border: OutlineInputBorder()),
+                          controller: _palavraController,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Campo não pode ser vazio';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      Consumer<MapProvider>(
+                        builder: (context, mapProvider, child) {
+                          return DefinirLocalizacaoWidget(
+                            latitude: mapProvider.latitude,
+                            longitude: mapProvider.longitude,
+                            localizacaoString: mapProvider.localizacaoString,
+                            distancia: mapProvider.distancia,
+                            onData: (lat, lng, loc) {
+                              mapProvider.setLatitude(lat);
+                              mapProvider.setLongitude(lng);
+                              mapProvider.setLocalizacaoString(loc);
+                            },
+                          );
                         },
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  ElevatedButton(
-                    onPressed: () => _navigateListarProdutosPage(context),
-                    child: const Text('Pesquisar'),
-                  ),
-                ],
-              )),
+                      ),
+                      const SizedBox(height: 15),
+                      ElevatedButton(
+                        onPressed: () => _navigateListarProdutosPage(context),
+                        child: const Text('Pesquisar'),
+                      ),
+                    ],
+                  )),
             ),
           ),
         ],
@@ -275,5 +263,4 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
     );
   }
-
 }

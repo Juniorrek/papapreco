@@ -6,9 +6,9 @@ import 'package:papapreco/widgets/auth/senha_e_confirmacao_widget.dart';
 
 class EsqueciSenhaRedefinicaoPage extends StatefulWidget {
   final String email;
-  final String token;
+  final String codigo;
   const EsqueciSenhaRedefinicaoPage(
-      {super.key, required this.email, required this.token});
+      {super.key, required this.email, required this.codigo});
 
   static const String routeName = '/esqueci_senha/redefinicao';
 
@@ -26,7 +26,7 @@ class _EsqueciSenhaRedefinicaoPageState
   void _redefinirSenha(context) async {
     try {
       String novaSenha = _senha;
-      String retorno = await _authRest.redefinirSenha(widget.email, widget.token, novaSenha);
+      String retorno = await _authRest.redefinirSenha(widget.email, widget.codigo, novaSenha);
 
       if (retorno == 'OK') {
         ScaffoldMessenger.of(context)
