@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:premiumprice/misc/auth/auth_provider.dart';
-import 'package:premiumprice/routes/routes.dart';
+import 'package:papapreco/misc/auth/auth_provider.dart';
+import 'package:papapreco/routes/routes.dart';
 import 'package:provider/provider.dart';
 
 class EndDrawer extends StatelessWidget {

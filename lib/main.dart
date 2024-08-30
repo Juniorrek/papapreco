@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
-import 'package:premiumprice/misc/auth/auth_provider.dart';
-import 'package:premiumprice/misc/auth/map_provider.dart';
-import 'package:premiumprice/view/auth/cadastro_page.dart';
-import 'package:premiumprice/view/auth/esqueci_senha_codigo_page.dart';
-import 'package:premiumprice/view/auth/esqueci_senha_page.dart';
-import 'package:premiumprice/view/auth/esqueci_senha_redefinicao_page.dart';
-import 'package:premiumprice/view/auth/login_page.dart';
-import 'package:premiumprice/view/definir_localizacao_page.dart';
-import 'package:premiumprice/view/produto/cadastrar_produto_page.dart';
-import 'package:premiumprice/view/produto/confirmar_digitalizacao_page.dart';
-import 'package:premiumprice/view/produto/detalhe_produto_page.dart';
-import 'package:premiumprice/view/produto/digitalizar_nota_page.dart';
-import 'package:premiumprice/view/produto/filtrar_produtos_page.dart';
-import 'package:premiumprice/view/produto/listar_produtos_mapa_page.dart';
-import 'package:premiumprice/view/produto/listar_produtos_page.dart';
-import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
-import 'package:premiumprice/view/produto/sugerir_edicao_page.dart';
-import 'package:premiumprice/view/usuario/alterar_senha_page.dart';
-import 'package:premiumprice/widgets/end_drawer.dart';
-import 'package:premiumprice/widgets/map/definir_localizacao_widget.dart';
+import 'package:papapreco/misc/auth/auth_provider.dart';
+import 'package:papapreco/misc/auth/map_provider.dart';
+import 'package:papapreco/theme/theme.dart';
+import 'package:papapreco/view/auth/cadastro_page.dart';
+import 'package:papapreco/view/auth/codigo_verificacao_page.dart';
+import 'package:papapreco/view/auth/esqueci_senha_page.dart';
+import 'package:papapreco/view/auth/esqueci_senha_redefinicao_page.dart';
+import 'package:papapreco/view/auth/login_page.dart';
+import 'package:papapreco/view/definir_localizacao_page.dart';
+import 'package:papapreco/view/produto/cadastrar_produto_page.dart';
+import 'package:papapreco/view/produto/confirmar_digitalizacao_page.dart';
+import 'package:papapreco/view/produto/detalhe_produto_page.dart';
+import 'package:papapreco/view/produto/digitalizar_nota_page.dart';
+import 'package:papapreco/view/produto/filtrar_produtos_page.dart';
+import 'package:papapreco/view/produto/listar_produtos_mapa_page.dart';
+import 'package:papapreco/view/produto/listar_produtos_page.dart';
+import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
+import 'package:papapreco/view/produto/sugerir_edicao_page.dart';
+import 'package:papapreco/view/usuario/alterar_senha_page.dart';
+import 'package:papapreco/widgets/end_drawer.dart';
+import 'package:papapreco/widgets/map/definir_localizacao_widget.dart';
 import 'package:provider/provider.dart';
 
 import 'routes/routes.dart';
@@ -54,26 +55,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Premium Price',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurpleAccent),
-        /*colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.amber, // Amarelo mais vibrante
-          primary: Colors.black87, // Cor principal
-          secondary: Colors.amber[700], // Cor secundária
-        ),*/
-        //colorScheme: ColorScheme.fromSeed(seedColor: Colors.amberAccent),
-        /*colorScheme: ColorScheme.fromSeed(
-          brightness: MediaQuery.platformBrightnessOf(context),
-          //seedColor: Colors.indigo,
-          seedColor: Colors.deepPurpleAccent,
-        ),*/
-        textTheme: TextTheme(),
-        useMaterial3: true,
-      ),
+      title: 'Papa Preço',
+      theme: appTheme(),
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
-          return const MyHomePage(title: 'Premium Price');
+          return const MyHomePage(title: 'Papa Preço');
           /*if (auth.isLoggedIn) {
             return HomePage();
           } else {
@@ -82,7 +68,7 @@ class MyApp extends StatelessWidget {
         },
       ),
       routes: {
-        Routes.home: (context) => const MyHomePage(title: 'Premium Price'),
+        Routes.home: (context) => const MyHomePage(title: 'Papa Preço'),
         //Routes.listarProdutos: (context) => const ListarProdutosPage(),
         //paginas com parametro nao precisam ser declaradas aqui ja que estao embaixos
         //Routes.listarProdutosMapa: (context) => const ListarProdutosMapaPage(),
@@ -121,11 +107,15 @@ class MyApp extends StatelessWidget {
               palavra: args["palavra"],
               distancia: args["distancia"],
               precoMin: args["precoMin"],
-              precoMax: args["precoMax"]),
+              precoMax: args["precoMax"],
+              latitude: args["latitude"],
+              longitude: args["longitude"],
+              localizacaoString: args["localizacaoString"]),
           Routes.confirmarDigitalizacao: (ctx) =>
               ConfirmarDigitalizacaoPage(urlQr: args["urlQr"]),
-          Routes.esqueciSenhaCodigo: (ctx) =>
-              EsqueciSenhaCodigoPage(email: args["email"]),
+          Routes.codigoVerificacao: (ctx) =>
+              CodigoVerificacaoPage(email: args["email"],
+              tipo: args["tipo"]),
           Routes.esqueciSenhaRedefinicao: (ctx) => EsqueciSenhaRedefinicaoPage(
               email: args["email"], token: args["token"]),
         };
@@ -178,104 +168,112 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
       ),
-      endDrawer:
-          context.watch<AuthProvider>().isLoggedIn ? const EndDrawer() : null,
-      body: Center(
-        child: Form(
-            key: _formKey,
-            child: Column(
+      endDrawer: context.watch<AuthProvider>().isLoggedIn ? const EndDrawer() : null,
+      body: Column(
+        children: <Widget>[
+          // Primeira Seção
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            child: const Column(
               children: <Widget>[
-                const Expanded(
-                    child: Column(children: <Widget>[
-                  Image(
-                    image: AssetImage('assets/images/pp.png'),
-                    height: 150,
-                  ),
+                Image(
+                  image: AssetImage('assets/images/pp.png'),
+                  height: 150,
+                ),
+                Text(
+                  "Papa Preço",
+                  style: TextStyle(fontSize: 30),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20), // Espaço entre seções
+
+          // Segunda Seção
+          Expanded(
+            flex: 1,
+            child: SingleChildScrollView(
+              child: Form(
+              key: _formKey,
+              child: Column(
+                children: <Widget>[
                   Text(
-                    "Premium Price",
-                    style: TextStyle(fontSize: 30),
+                    'Produto:',
+                    style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
                   ),
-                ])),
-                Expanded(
-                    child: Column(children: <Widget>[
-                  Text('Produto:',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          )),
                   Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 8),
-                      child: TextFormField(
-                        decoration:
-                            const InputDecoration(border: OutlineInputBorder()),
-                        controller: _palavraController,
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return 'Campo não pode ser vazio';
-                          }
-                          return null;
-                        },
-                      )),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: TextFormField(
+                      decoration: const InputDecoration(border: OutlineInputBorder()),
+                      controller: _palavraController,
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Campo não pode ser vazio';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
                   Consumer<MapProvider>(
                     builder: (context, mapProvider, child) {
                       return DefinirLocalizacaoWidget(
-                          latitude: mapProvider.latitude,
-                          longitude: mapProvider.longitude,
-                          localizacaoString: mapProvider.localizacaoString,
-                          distancia: mapProvider.distancia,
-                          onData: (lat, lng, loc) {
-                            mapProvider.setLatitude(lat);
-                            mapProvider.setLongitude(lng);
-                            mapProvider.setLocalizacaoString(loc);
-                          });
+                        latitude: mapProvider.latitude,
+                        longitude: mapProvider.longitude,
+                        localizacaoString: mapProvider.localizacaoString,
+                        distancia: mapProvider.distancia,
+                        onData: (lat, lng, loc) {
+                          mapProvider.setLatitude(lat);
+                          mapProvider.setLongitude(lng);
+                          mapProvider.setLocalizacaoString(loc);
+                        },
+                      );
                     },
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 15),
                   ElevatedButton(
                     onPressed: () => _navigateListarProdutosPage(context),
                     child: const Text('Pesquisar'),
-                  )
-                ])),
-                if (!context.watch<AuthProvider>().isLoggedIn)
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 8),
-                        child: ElevatedButton(
-                            onPressed: () async {
-                              /*Navigator.pushNamed(
-                                context, Routes.digitalizarNota);*/
-                              /*final result = * await*/ 
-                              Navigator.pushNamed(context, Routes.login);
-                              /*if (result == true) {
-                              setState(() {
-                                // Atualize o estado ou recarregue as informações conforme necessário.
-                              });
-                            }*/
-                            },
-                            child: const Text("Login"))),
-                    ElevatedButton(
-                        onPressed: () {
-                          /*Navigator.pushNamed(
-                            context, Routes.confirmarDigitalizacao,
-                            arguments: <String, String>{
-                              "urlQr":
-                                  "https://www.fazenda.pr.gov.br/nfce/qrcode?p=41240778116670001994650110000706859008861151|2|1|19|191.37|36424547706431514c323277326e5933526a4272497a356d31746b3d|1|1E71BE91A8A04C4D104650E2FB2AB5B14CDB91E8"
-                            });*/
-                          Navigator.pushNamed(context, Routes.cadastro);
-                        },
-                        child: const Text("Criar Conta")),
-                  ])
-              ],
-            )),
+                  ),
+                ],
+              )),
+            ),
+          ),
+        ],
       ),
+      bottomNavigationBar: context.watch<AuthProvider>().isLoggedIn
+          ? null
+          : BottomAppBar(
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          Navigator.pushNamed(context, Routes.login);
+                        },
+                        child: const Text("Login"),
+                      ),
+                    ),
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, Routes.cadastro);
+                      },
+                      child: const Text("Criar Conta"),
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
+
 }

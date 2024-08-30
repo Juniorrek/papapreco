@@ -2,15 +2,15 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
-import 'package:premiumprice/helper/error.dart';
-import 'package:premiumprice/misc/auth/auth_provider.dart';
-import 'package:premiumprice/misc/auth/map_provider.dart';
-import 'package:premiumprice/model/produto.dart';
-import 'package:premiumprice/repositories/produto_repository.dart';
-import 'package:premiumprice/routes/routes.dart';
-import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
-import 'package:premiumprice/widgets/end_drawer.dart';
-import 'package:premiumprice/widgets/map/definir_localizacao_widget.dart';
+import 'package:papapreco/helper/error.dart';
+import 'package:papapreco/misc/auth/auth_provider.dart';
+import 'package:papapreco/misc/auth/map_provider.dart';
+import 'package:papapreco/model/produto.dart';
+import 'package:papapreco/repositories/produto_repository.dart';
+import 'package:papapreco/routes/routes.dart';
+import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
+import 'package:papapreco/widgets/end_drawer.dart';
+import 'package:papapreco/widgets/map/definir_localizacao_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -171,7 +171,10 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
           "palavra": _palavraController.text,
           "distancia": mapProvider.distancia,
           "precoMin": _precoMin,
-          "precoMax": _precoMax
+          "precoMax": _precoMax,
+          "latitude": mapProvider.latitude,
+          "longitude": mapProvider.longitude,
+          "localizacaoString": mapProvider.localizacaoString
         }) as Map<String, Object?>?;
 
     //clicou em retornar
@@ -186,6 +189,10 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
 
       _precoMin = result['precoMin'];
       _precoMax = result['precoMax'];
+
+      mapProvider.setLatitude(result['latitude']);
+      mapProvider.setLongitude(result['longitude']);
+      mapProvider.setLocalizacaoString(result['localizacaoString']);
     });
 
     _refreshList(mapProvider.latitude, mapProvider.longitude, result['distancia']);
@@ -198,7 +205,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
 
     return Scaffold(
         appBar: AppBar(
-            title: const Text("Premium Price"),
+            title: const Text("Papa Preço"),
             leading: BackButton(
                 onPressed: () => Navigator.pop(context, <String, Object>{
                       "palavra": _palavraController.text
@@ -262,6 +269,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.map),
+                          iconSize: 40.0,
                           onPressed: () {
                             Navigator.pushNamed(
                                 context, Routes.listarProdutosMapa,
@@ -281,6 +289,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.filter_alt),
+                          iconSize: 40.0,
                           onPressed: () =>
                               _navigateFiltrarProdutosPage(context),
                         ),

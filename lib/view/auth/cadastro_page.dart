@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:premiumprice/helper/error.dart';
-import 'package:premiumprice/model/usuario.dart';
-import 'package:premiumprice/rest/auth_rest.dart';
-import 'package:premiumprice/widgets/auth/senha_e_confirmacao_widget.dart';
+import 'package:papapreco/helper/error.dart';
+import 'package:papapreco/model/usuario.dart';
+import 'package:papapreco/rest/auth_rest.dart';
+import 'package:papapreco/widgets/auth/senha_e_confirmacao_widget.dart';
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -35,13 +35,8 @@ class _CadastroPageState extends State<CadastroPage> {
 
       if (!mounted) return;
 
-      if (!novoUsuario.verificado) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sucesso! Verifique seu email.')));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sucesso!')));
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sucesso!')));
 
       Navigator.pop(context);
     } catch (exception) {

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:premiumprice/misc/auth/map_provider.dart';
-import 'package:premiumprice/misc/map/tile_providers.dart';
-import 'package:premiumprice/model/produto.dart';
+import 'package:papapreco/misc/auth/map_provider.dart';
+import 'package:papapreco/misc/map/tile_providers.dart';
+import 'package:papapreco/model/produto.dart';
 import 'dart:math';
-import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
-import 'package:premiumprice/routes/routes.dart';
+import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
+import 'package:papapreco/routes/routes.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -150,7 +150,7 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
     
     if (!isLoading) {
       return Scaffold(
-          appBar: AppBar(title: const Text("Premium Price")),
+          appBar: AppBar(title: const Text("Papa Preço")),
           body: Stack(
             children: [
               FlutterMap(
@@ -178,7 +178,7 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
           ));
     } else {
       return Scaffold(
-          appBar: AppBar(title: const Text("Premium Price")),
+          appBar: AppBar(title: const Text("Papa Preço")),
           body: Stack(
             children: [_loadingMap()],
           ));

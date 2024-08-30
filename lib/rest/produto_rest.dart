@@ -1,10 +1,10 @@
 import 'package:decimal/decimal.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
-import 'package:premiumprice/model/localizacao.dart';
-import 'package:premiumprice/model/produto.dart';
-import 'package:premiumprice/rest/api.dart';
-import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
+import 'package:papapreco/model/localizacao.dart';
+import 'package:papapreco/model/produto.dart';
+import 'package:papapreco/rest/api.dart';
+import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
 
 class ProdutoRest {
   Future<Produto> buscarPorId(int id) async {

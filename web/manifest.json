@@ -1,6 +1,6 @@
 {
-    "name": "premiumprice",
-    "short_name": "premiumprice",
+    "name": "papapreco",
+    "short_name": "papapreco",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

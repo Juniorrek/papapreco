@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:premiumprice/helper/error.dart';
-import 'package:premiumprice/helper/success.dart';
-import 'package:premiumprice/misc/auth/auth_provider.dart';
-import 'package:premiumprice/model/produto.dart';
-import 'package:premiumprice/repositories/produto_repository.dart';
-import 'package:premiumprice/repositories/voto_usuario_produto_repository.dart';
-import 'package:premiumprice/routes/routes.dart';
+import 'package:papapreco/helper/error.dart';
+import 'package:papapreco/helper/success.dart';
+import 'package:papapreco/misc/auth/auth_provider.dart';
+import 'package:papapreco/model/produto.dart';
+import 'package:papapreco/repositories/produto_repository.dart';
+import 'package:papapreco/repositories/voto_usuario_produto_repository.dart';
+import 'package:papapreco/routes/routes.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -181,7 +181,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
 
     return Scaffold(
         appBar: AppBar(
-          title: const Text("Premium Price"),
+          title: const Text("Papa Preço"),
           //automaticallyImplyLeading: false,
         ),
         body: Column(
@@ -357,7 +357,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
 
   Scaffold _loadingDetails() {
     return Scaffold(
-      appBar: AppBar(title: const Text("Premium Price")),
+      appBar: AppBar(title: const Text("Papa Preço")),
       body: Shimmer.fromColors(
         baseColor: Colors.grey[300]!,
         highlightColor: Colors.grey[100]!,

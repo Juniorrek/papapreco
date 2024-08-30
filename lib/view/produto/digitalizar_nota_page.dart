@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:premiumprice/widgets/scanner_button_widgets.dart';
-import 'package:premiumprice/widgets/scanner_error_widget.dart';
+import 'package:papapreco/widgets/scanner_button_widgets.dart';
+import 'package:papapreco/widgets/scanner_error_widget.dart';
 
 class DigitalizarNotaPage extends StatefulWidget {
   static const String routeName = '/digitalizar';
@@ -115,7 +115,7 @@ class _DigitalizarNotaPageState extends State<DigitalizarNotaPage> with WidgetsB
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Premium Price"),),
+      appBar: AppBar(title: const Text("Papa Preço"),),
       body: Stack(
         children: [
           MobileScanner(

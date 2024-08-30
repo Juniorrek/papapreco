@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:premiumprice/model/voto_usuario_produto.dart';
-import 'package:premiumprice/rest/api.dart';
+import 'package:papapreco/model/voto_usuario_produto.dart';
+import 'package:papapreco/rest/api.dart';
 
 class VotoUsuarioProdutoRest {
   Future<VotoUsuarioProduto> buscarPorId(int id) async {

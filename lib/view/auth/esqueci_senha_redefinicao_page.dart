@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:premiumprice/helper/error.dart';
-import 'package:premiumprice/rest/auth_rest.dart';
-import 'package:premiumprice/routes/routes.dart';
-import 'package:premiumprice/widgets/auth/senha_e_confirmacao_widget.dart';
+import 'package:papapreco/helper/error.dart';
+import 'package:papapreco/rest/auth_rest.dart';
+import 'package:papapreco/routes/routes.dart';
+import 'package:papapreco/widgets/auth/senha_e_confirmacao_widget.dart';
 
 class EsqueciSenhaRedefinicaoPage extends StatefulWidget {
   final String email;

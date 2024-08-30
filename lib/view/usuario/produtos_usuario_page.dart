@@ -1,7 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:premiumprice/model/localizacao.dart';
-import 'package:premiumprice/model/produto.dart';
+import 'package:papapreco/model/localizacao.dart';
+import 'package:papapreco/model/produto.dart';
 
 class ProdutosUsuarioPage extends StatefulWidget {
   const ProdutosUsuarioPage({super.key});

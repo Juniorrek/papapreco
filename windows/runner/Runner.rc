@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "premiumprice" "\0"
+            VALUE "FileDescription", "papapreco" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "premiumprice" "\0"
+            VALUE "InternalName", "papapreco" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "premiumprice.exe" "\0"
-            VALUE "ProductName", "premiumprice" "\0"
+            VALUE "OriginalFilename", "papapreco.exe" "\0"
+            VALUE "ProductName", "papapreco" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

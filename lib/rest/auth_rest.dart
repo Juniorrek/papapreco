@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:premiumprice/model/usuario.dart';
-import 'package:premiumprice/rest/api.dart';
+import 'package:papapreco/model/usuario.dart';
+import 'package:papapreco/rest/api.dart';
 
 class AuthRest {
-  Future<Map> signIn(String email, String senha) async {
+  Future<dynamic> signIn(String email, String senha) async {
     final http.Response response = await http.post(
       Uri.http(API.endpoint, '${API.name}/auth/login'),
       headers: <String, String>{
@@ -24,7 +24,7 @@ class AuthRest {
 
       return jsonDecode(response.body);
     } else {
-      throw Exception('Erro fazendo login.');
+      return response.body;
     }
   }
 
@@ -69,21 +69,39 @@ class AuthRest {
       return "OK";
     } else {
       return response.body;
-      //return response.body;
-      //throw Exception('Erro gerar token.');
     }
   }
 
-  Future<String> recuperarSenhaValidarToken(String email, String token) async {
+  Future<String> validarCodigoVerificacao(String email, String codigo) async {
     final http.Response response =
-        await http.get(Uri.parse('http://${API.endpoint}/${API.name}/auth/redefinirSenha/validarToken?email=$email&token=$token'));
+        await http.get(Uri.parse('http://${API.endpoint}/${API.name}/auth/validarCodigoVerificacao?email=$email&codigo=$codigo'));
 
     if (response.statusCode == 200) {
       return "OK";
     } else {
       return response.body;
-      //return response.body;
-      //throw Exception('Erro gerar token.');
+    }
+  }
+
+  Future<String> verificarEmail(String email, String codigo) async {
+    final http.Response response =
+        await http.get(Uri.parse('http://${API.endpoint}/${API.name}/auth/verificarEmail?email=$email&codigo=$codigo'));
+
+    if (response.statusCode == 200) {
+      return "OK";
+    } else {
+      return response.body;
+    }
+  }
+
+  Future<bool> enviarCodigoVerificacao(String email, String tipo) async {
+    final http.Response response =
+        await http.get(Uri.parse('http://${API.endpoint}/${API.name}/auth/enviarCodigoVerificacao?email=$email&tipo=$tipo'));
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      return false;
     }
   }
 

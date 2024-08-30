@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
-import 'package:premiumprice/routes/routes.dart';
-import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
+import 'package:papapreco/routes/routes.dart';
+import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
 
 class DefinirLocalizacaoWidget extends StatefulWidget {
   const DefinirLocalizacaoWidget(
@@ -25,6 +25,7 @@ class DefinirLocalizacaoWidget extends StatefulWidget {
 
 class _DefinirLocaliacaoWidgetState extends State<DefinirLocalizacaoWidget> {
   bool _isLoading = false;
+  bool _isBuscando = false;
 
   @override
   void initState() {
@@ -32,8 +33,16 @@ class _DefinirLocaliacaoWidgetState extends State<DefinirLocalizacaoWidget> {
   }
 
   Future<void> _setLocalizacaoAtualString(double latitude, double longitude) async {
+    setState(() {
+      _isBuscando = true;
+    });
+    
     String reverseGeocodingString =
         await map_lib.reverseGeocodingString(latitude, longitude);
+
+    setState(() {
+      _isBuscando = false;
+    });
 
     widget.onData(latitude, longitude, reverseGeocodingString);
   }
@@ -56,17 +65,17 @@ class _DefinirLocaliacaoWidgetState extends State<DefinirLocalizacaoWidget> {
     await _setLocalizacaoAtualString(result.latitude, result.longitude);
   }
 
-  void _updateLoadingState() {
-    setState(() {
-      _isLoading = widget.localizacaoString.isEmpty;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     // Verifica se o estado precisa ser atualizado quando o widget é reconstruído
-    if (widget.localizacaoString.isEmpty != _isLoading) {
-      _updateLoadingState();
+    if (!widget.localizacaoString.isEmpty && !_isBuscando) {
+      setState(() {
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _isLoading = true;
+      });
     }
 
     return TextButton(
@@ -87,7 +96,9 @@ class _DefinirLocaliacaoWidgetState extends State<DefinirLocalizacaoWidget> {
     if (!_isLoading) {
       return Flexible(
       child:Text(widget.localizacaoString +
-                (widget.distancia != null ? ' (${widget.distancia?.toInt().toString()}km)' : '')));
+                (widget.distancia != null ? ' (${widget.distancia?.toInt().toString()}km)' : ''),
+                style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.normal)),
+                );
     } else {
       return const SizedBox(
             width: 15,  // Largura desejada

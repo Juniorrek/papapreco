@@ -1,6 +1,6 @@
 import 'package:decimal/decimal.dart';
-import 'package:premiumprice/model/produto.dart';
-import 'package:premiumprice/rest/produto_rest.dart';
+import 'package:papapreco/model/produto.dart';
+import 'package:papapreco/rest/produto_rest.dart';
 
 class ProdutoRepository {
   final ProdutoRest api = ProdutoRest();

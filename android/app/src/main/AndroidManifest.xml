@@ -1,6 +1,6 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="br.com.premiumprice">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="br.com.papapreco">
     <application
-        android:label="premiumprice"
+        android:label="papapreco"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,9 +1,9 @@
 
 import 'dart:convert';
 
-import 'package:premiumprice/model/usuario.dart';
+import 'package:papapreco/model/usuario.dart';
 import 'package:http/http.dart' as http;
-import 'package:premiumprice/rest/api.dart';
+import 'package:papapreco/rest/api.dart';
 
 class UsuarioRest {
   Future<Usuario?> alterarSenha(Usuario usuario, String senhaAtual, String? token) async {

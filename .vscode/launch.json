@@ -20,19 +20,19 @@
             "runtimeExecutable": "/usr/bin/brave-browser",
         },
         {
-            "name": "premiumprice",
+            "name": "papapreco",
             "request": "launch",
             "program": "lib/main.dart",
             "type": "dart"
         },
         {
-            "name": "premiumprice (profile mode)",
+            "name": "papapreco (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "premiumprice (release mode)",
+            "name": "papapreco (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:premiumprice/misc/auth/auth_provider.dart';
-import 'package:premiumprice/model/usuario.dart';
-import 'package:premiumprice/rest/auth_rest.dart';
-import 'package:premiumprice/routes/routes.dart';
+import 'package:papapreco/misc/auth/auth_provider.dart';
+import 'package:papapreco/model/usuario.dart';
+import 'package:papapreco/rest/auth_rest.dart';
+import 'package:papapreco/routes/routes.dart';
+import 'package:papapreco/view/auth/codigo_verificacao_page.dart';
 import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
@@ -23,16 +24,15 @@ class _LoginPageState extends State<LoginPage> {
   final _senhaController = TextEditingController();
   final AuthRest _authRest = AuthRest();
 
-  
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId: '736661748519-433ei1nefrp6m1f0k3forqbh904r8oac.apps.googleusercontent.com',
+    serverClientId:
+        '736661748519-433ei1nefrp6m1f0k3forqbh904r8oac.apps.googleusercontent.com',
     scopes: [
       'email',
       /*'profile',
       'openid'*/
     ],
   );
-  
 
   @override
   void initState() {
@@ -41,9 +41,16 @@ class _LoginPageState extends State<LoginPage> {
 
   void _signInGoogle() async {
     try {
+      /* 
+      TODO: remove this after testing was finished,
+      this lets you pick your account in every login attempt 
+      */
+      await _googleSignIn.signOut();
+
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser != null) {
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
         final String? idToken = googleAuth.idToken;
 
         Map a = await _authRest.signInGoogle(idToken!, googleAuth.accessToken!);
@@ -55,12 +62,11 @@ class _LoginPageState extends State<LoginPage> {
         await context.read<AuthProvider>().login(a['token'], u);
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Logado com sucesso.')));
-
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Logado com sucesso.')));
 
         if (!mounted) return;
-            Navigator.pushReplacementNamed(context, Routes.home);
+        Navigator.pushReplacementNamed(context, Routes.home);
       }
     } catch (e) {
       print('EROO $e');
@@ -69,33 +75,71 @@ class _LoginPageState extends State<LoginPage> {
 
   void _logar() async {
     try {
-      Map a = await _authRest.signIn(_emailController.text, _senhaController.text);
-
-      Usuario u = Usuario.fromMap(a['usuario']);
-
-      if (!mounted) return;
-
-      await context.read<AuthProvider>().login(a['token'], u);
-
+      String email = _emailController.text;
+      dynamic retorno = await _authRest.signIn(email, _senhaController.text);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Logado com sucesso.')));
 
-
-      if (!mounted) return;
-          Navigator.pushReplacementNamed(context, Routes.home);
+      if (retorno is Map) {
+        await _processarLogin(retorno);
+      } else {
+        await _tratarErroLogin(retorno, email);
+      }
     } catch (exception) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email ou senha inválidos!')));
-      //showError(context, "Erro no login", exception.toString());
+      if (!mounted) return;
+      _exibirSnackBar('Erro inesperado!');
     }
   }
 
+  Future<void> _processarLogin(Map retorno) async {
+    Usuario u = Usuario.fromMap(retorno['usuario']);
+    await context.read<AuthProvider>().login(retorno['accessToken'], u);
+
+    _exibirSnackBar('Logado com sucesso.');
+    _navegarParaHome();
+  }
+
+  Future<void> _tratarErroLogin(dynamic retorno, String email) async {
+    if (retorno == 'Email não verificado!') {
+      _exibirSnackBar('Email não verificado! Verifique a caixa de email!');
+
+      bool enviado =
+          await _authRest.enviarCodigoVerificacao(email, "VERIFICAR_EMAIL");
+      if (enviado) {
+        _navegarParaCodigoVerificacao(email);
+      } else {
+        _exibirSnackBar('Erro ao enviar código de verificação de email!');
+      }
+    } else {
+      _exibirSnackBar(retorno as String);
+    }
+  }
+
+  void _exibirSnackBar(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensagem)),
+    );
+  }
+
+  void _navegarParaHome() {
+    Navigator.pushReplacementNamed(context, Routes.home);
+  }
+
+  void _navegarParaCodigoVerificacao(String email) {
+    Navigator.pushNamed(
+      context,
+      Routes.codigoVerificacao,
+      arguments: <String, Object>{
+        "email": email,
+        "tipo": TipoCodigoVerificacao.verificarEmail,
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('Login'),
       ),
@@ -107,7 +151,7 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             const Center(
               child: Text(
-                "Premium Price",
+                "Papa Preço",
                 style: TextStyle(fontSize: 30),
               ),
             ),
@@ -116,41 +160,38 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 children: <Widget>[
                   TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Obrigatório';
-                  }
-                  return null; 
-                }
-                  ),
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Obrigatório';
+                        }
+                        return null;
+                      }),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _senhaController,
-                    decoration: const InputDecoration(
-                      labelText: 'Senha',
-                      border: OutlineInputBorder(),
-                    ),
-                    obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Obrigatório';
-                  }
-                  return null; 
-                }
-                  ),
+                      controller: _senhaController,
+                      decoration: const InputDecoration(
+                        labelText: 'Senha',
+                        border: OutlineInputBorder(),
+                      ),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Obrigatório';
+                        }
+                        return null;
+                      }),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-
-                  if (_formKey.currentState?.validate() ?? false) {
-                      _logar();
-                  }
+                      if (_formKey.currentState?.validate() ?? false) {
+                        _logar();
+                      }
                     },
                     child: const Text('Entrar'),
                   ),
@@ -159,9 +200,29 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             ElevatedButton.icon(
-              icon: const FaIcon(FontAwesomeIcons.google, color: Colors.red,),
-              label: const Text("Entrar com a conta Google"),
-              onPressed: () =>_signInGoogle()
+              icon: const FaIcon(
+                FontAwesomeIcons.google,
+                color: Colors.red,
+                size: 24.0,
+              ),
+              label: const Text(
+                'Entrar com a conta Google',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              onPressed: () => _signInGoogle(),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.black,
+                backgroundColor: Colors.white,
+                side: const BorderSide(color: Colors.black, width: 1.0),
+                padding: const EdgeInsets.symmetric(
+                    vertical: 16.0, horizontal: 24.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
             ),
             /*Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -192,15 +253,13 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(
-                        context, Routes.esqueciSenha);
+                    Navigator.pushNamed(context, Routes.esqueciSenha);
                   },
                   child: const Text('Esqueci minha senha'),
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(
-                        context, Routes.cadastro);
+                    Navigator.pushNamed(context, Routes.cadastro);
                   },
                   child: const Text('Criar conta'),
                 ),

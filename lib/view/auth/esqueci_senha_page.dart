@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:premiumprice/helper/error.dart';
-import 'package:premiumprice/rest/auth_rest.dart';
-import 'package:premiumprice/routes/routes.dart';
+import 'package:papapreco/helper/error.dart';
+import 'package:papapreco/rest/auth_rest.dart';
+import 'package:papapreco/routes/routes.dart';
 
 class EsqueciSenhaPage extends StatelessWidget {
   EsqueciSenhaPage({super.key});
@@ -41,11 +41,19 @@ class EsqueciSenhaPage extends StatelessWidget {
       Navigator.of(context, rootNavigator: true).pop();
 
       if (retorno == 'OK') {
-        Navigator.pushNamed(
-          context, Routes.esqueciSenhaCodigo,
-          arguments: <String, Object>{
-            "email": email,
-          });
+        bool enviado = await _authRest.enviarCodigoVerificacao(email, "REDEFINIR_SENHA");
+        if (enviado) {
+          Navigator.pushNamed(
+            context, Routes.codigoVerificacao,
+            arguments: <String, Object>{
+              "email": email,
+              "tipo": "REDEFINIR_SENHA",
+            });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro ao enviar código de verificação de email!')),
+          );
+        }
       } else {
         //Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context)

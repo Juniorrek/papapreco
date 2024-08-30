@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:premiumprice/misc/map/map_lib.dart' as map_lib;
+import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
 
 class MapProvider with ChangeNotifier {
   double _latitude = map_lib.defaultLatitude;
@@ -34,7 +34,14 @@ class MapProvider with ChangeNotifier {
   }
 
   Future<void> setCurrentPosition() async {
-    Position? p = await map_lib.currentLocation();
+    setLatitude(map_lib.defaultLatitude); 
+      setLongitude(map_lib.defaultLongitude);
+
+      String reverseGeocodingString =
+        await map_lib.reverseGeocodingString(map_lib.defaultLatitude, map_lib.defaultLongitude);
+      setLocalizacaoString(reverseGeocodingString);
+
+    /*Position? p = await map_lib.currentLocation();
 
     if (p != null) {
       setLatitude(p.latitude); 
@@ -50,6 +57,6 @@ class MapProvider with ChangeNotifier {
       String reverseGeocodingString =
         await map_lib.reverseGeocodingString(map_lib.defaultLatitude, map_lib.defaultLongitude);
       setLocalizacaoString(reverseGeocodingString);
-    }
+    }*/
   }
 }

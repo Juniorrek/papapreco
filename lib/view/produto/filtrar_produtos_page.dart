@@ -2,8 +2,8 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:premiumprice/misc/auth/map_provider.dart';
-import 'package:premiumprice/widgets/map/definir_localizacao_widget.dart';
+import 'package:papapreco/misc/auth/map_provider.dart';
+import 'package:papapreco/widgets/map/definir_localizacao_widget.dart';
 import 'package:provider/provider.dart';
 
 class FiltrarProdutosPage extends StatefulWidget {
@@ -11,13 +11,16 @@ class FiltrarProdutosPage extends StatefulWidget {
   final double distancia;
   final Decimal? precoMin;
   final Decimal? precoMax;
+  final double latitude;
+  final double longitude;
+  final String localizacaoString;
 
   const FiltrarProdutosPage(
       {super.key,
       required this.palavra,
       required this.distancia,
       required this.precoMin,
-      required this.precoMax});
+      required this.precoMax, required this.latitude, required this.longitude, required this.localizacaoString});
 
   static const String routeName = '/produtos/filtrar';
 
@@ -34,6 +37,10 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
   final _maxPrecoController = TextEditingController();
   final MoneyInputFormatter _moneyInputFormatter = MoneyInputFormatter();
 
+  late double _latitude;
+  late double _longitude;
+  late String _localizacaoString;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +48,9 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
     setState(() {
       _palavraController.text = widget.palavra;
       _currentSliderDistanciaValue = widget.distancia;
+      _latitude = widget.latitude;
+      _longitude = widget.longitude;
+      _localizacaoString = widget.localizacaoString;
 
       if (widget.precoMin != null) {
         _minPrecoController.text =
@@ -64,6 +74,9 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
       "distancia": _currentSliderDistanciaValue,
       "precoMin": _textoToPreco(_minPrecoController.text),
       "precoMax": _textoToPreco(_maxPrecoController.text),
+      "latitude": _latitude,
+      "longitude": _longitude,
+      "localizacaoString": _localizacaoString,
     });
   }
 
@@ -85,25 +98,24 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: const Text("Premium Price")),
-        body: Column(
-          children: [
-            Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Column(
-                          children: [
-                            Text("Produto:",
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        )),
-                            Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: TextFormField(
+        appBar: AppBar(title: const Text("Papa Preço")),
+        body: Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Column(
+              children: [
+                Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Column(
+                              children: [
+                                const Text("Produto:",
+                                    style: TextStyle(
+                                        fontSize: 20.0,
+                                        fontWeight: FontWeight.bold)),
+                                TextFormField(
                                   decoration: const InputDecoration(
                                       border: OutlineInputBorder()),
                                   controller: _palavraController,
@@ -113,70 +125,81 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                                     }
                                     return null;
                                   },
-                                ))
-                          ],
-                        )),
-                    const SizedBox(height: 5),
-                    Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Column(
+                                )
+                              ],
+                            )),
+                        const SizedBox(height: 20),
+                        Column(
                           children: [
-                            Text("Localização:",
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        )),
+                            const Text("Localização:",
+                                style: TextStyle(
+                                    fontSize: 20.0,
+                                    fontWeight: FontWeight.bold)),
                             Consumer<MapProvider>(
-                        builder: (context, mapProvider, child) {
-                          return DefinirLocalizacaoWidget(
-                              latitude: mapProvider.latitude,
-                              longitude: mapProvider.longitude,
-                              localizacaoString: mapProvider.localizacaoString,
-                              distancia: mapProvider.distancia,
-                              onData: (lat, lng, loc) {
-                                mapProvider.setLatitude(lat);
-                                mapProvider.setLongitude(lng);
-                                mapProvider.setLocalizacaoString(loc);
-                              });
-                        },
-                      )
-                          ],
-                        )),
-                    const SizedBox(height: 5),
-                    Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Column(
-                          children: [
-                            Text(
-                                'Distância (${_currentSliderDistanciaValue.round()} km):',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        )),
-                            Slider(
-                              value: _currentSliderDistanciaValue,
-                              max: 50,
-                              divisions: 10,
-                              label:
-                                  '${_currentSliderDistanciaValue.round()} km',
-                              onChanged: (double value) {
-                                setState(() {
-                                  _currentSliderDistanciaValue = value;
-                                });
+                              builder: (context, mapProvider, child) {
+                                return DefinirLocalizacaoWidget(
+                                    latitude: _latitude,
+                                    longitude: _longitude,
+                                    localizacaoString:
+                                        _localizacaoString,
+                                    distancia: _currentSliderDistanciaValue,
+                                    onData: (lat, lng, loc) {
+                                      setState(() {
+                                        _latitude = lat;
+                                        _longitude = lng;
+                                        _localizacaoString = loc;
+                                      });
+                                    });
                               },
                             )
                           ],
-                        )),
-                    const SizedBox(height: 5),
-                    Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Column(
+                        ),
+                        const SizedBox(height: 20),
+                        Column(
                           children: [
-                            Text('Preço:',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        )),
+                            Text(
+                                'Distância (${_currentSliderDistanciaValue.round()} km):',
+                                style: const TextStyle(
+                                    fontSize: 20.0,
+                                    fontWeight: FontWeight.bold)),
+                            SliderTheme(
+                              data: SliderThemeData(
+                                activeTrackColor:
+                                    Colors.amber, // Cor da faixa ativa
+                                inactiveTrackColor: Colors.amber
+                                    .withOpacity(0.5), // Cor da faixa inativa
+                                thumbColor:
+                                    Colors.amber, // Cor do botão deslizante
+                                overlayColor: Colors.amber.withOpacity(
+                                    0.2), // Cor do overlay (efeito de toque)
+                                valueIndicatorColor:
+                                    Colors.amber, // Cor do indicador de valor
+                                valueIndicatorTextStyle: const TextStyle(
+                                    color: Colors
+                                        .black), // Cor do texto do indicador de valor
+                              ),
+                              child: Slider(
+                                value: _currentSliderDistanciaValue,
+                                max: 50,
+                                divisions: 10,
+                                label:
+                                    '${_currentSliderDistanciaValue.round()} km',
+                                onChanged: (double value) {
+                                  setState(() {
+                                    _currentSliderDistanciaValue = value;
+                                  });
+                                },
+                              ),
+                            )
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Column(
+                          children: [
+                            const Text('Preço:',
+                                style: TextStyle(
+                                    fontSize: 20.0,
+                                    fontWeight: FontWeight.bold)),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -211,20 +234,23 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                               ],
                             )
                           ],
-                        )),
-                    const SizedBox(height: 5),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _filtrarProdutos();
-                        }
-                      },
-                      child: const Text('Filtrar'),
-                    ),
-                  ],
-                ))
-          ],
-        ));
+                        ),
+                        const SizedBox(height: 20),
+                        Row(children: [
+                          Expanded(
+                              child: OutlinedButton(
+                            onPressed: () {
+                              if (_formKey.currentState!.validate()) {
+                                _filtrarProdutos();
+                              }
+                            },
+                            child: const Text('Filtrar'),
+                          ))
+                        ]),
+                      ],
+                    ))
+              ],
+            )));
   }
 }
 

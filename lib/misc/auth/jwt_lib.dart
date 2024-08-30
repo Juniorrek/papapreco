@@ -1,6 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:premiumprice/model/usuario.dart';
+import 'package:papapreco/model/usuario.dart';
 
 const storage = FlutterSecureStorage();
 

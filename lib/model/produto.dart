@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
-import 'package:premiumprice/model/localizacao.dart';
-import 'package:premiumprice/model/voto_usuario_produto.dart';
+import 'package:papapreco/model/localizacao.dart';
+import 'package:papapreco/model/voto_usuario_produto.dart';
 
 class Produto {
   int? id;

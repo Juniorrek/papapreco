@@ -1,5 +1,5 @@
-import 'package:premiumprice/model/voto_usuario_produto.dart';
-import 'package:premiumprice/rest/voto_usuario_produto_rest.dart';
+import 'package:papapreco/model/voto_usuario_produto.dart';
+import 'package:papapreco/rest/voto_usuario_produto_rest.dart';
 
 class VotoUsuarioProdutoRepository {
   final VotoUsuarioProdutoRest api = VotoUsuarioProdutoRest();
