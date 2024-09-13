@@ -8,6 +8,7 @@ import 'package:papapreco/model/produto.dart';
 import 'dart:math';
 import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
 import 'package:papapreco/routes/routes.dart';
+import 'package:papapreco/widgets/end_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -53,15 +54,15 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
 
   LatLng _calcularCentroideProdutos(List<Produto> produtos) {
     double latitude = (produtos
-                .map<double>((p) => p.localizacao.latitude)
+                .map<double>((p) => p.localizacao.latitude!)
                 .reduce(max) +
-            produtos.map<double>((p) => p.localizacao.latitude).reduce(min)) /
+            produtos.map<double>((p) => p.localizacao.latitude!).reduce(min)) /
         2;
 
     double longitude = (produtos
-                .map<double>((p) => p.localizacao.longitude)
+                .map<double>((p) => p.localizacao.longitude!)
                 .reduce(max) +
-            produtos.map<double>((p) => p.localizacao.longitude).reduce(min)) /
+            produtos.map<double>((p) => p.localizacao.longitude!).reduce(min)) /
         2;
 
     return LatLng(latitude, longitude);
@@ -74,8 +75,8 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
       isLoading = true;
       for (var i = 0; i < widget.produtos.length; i++) {
         markers.add(Marker(
-            point: LatLng(widget.produtos[i].localizacao.latitude,
-                widget.produtos[i].localizacao.longitude),
+            point: LatLng(widget.produtos[i].localizacao.latitude!,
+                widget.produtos[i].localizacao.longitude!),
             width: 180,
             height: 180,
             child: GestureDetector(
@@ -248,6 +249,7 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text("Papa Preço")),
+        endDrawer: const EndDrawer(),
       body: isLoading ? _loadingMap() : _buildMap(mapProvider),
     );
   }
@@ -257,8 +259,8 @@ class _ListarProdutosMapaPageState extends State<ListarProdutosMapaPage> {
       mapController: _mapController,
       options: MapOptions(
         initialCenter: widget.produtos.isNotEmpty
-            ? LatLng(widget.produtos[0].localizacao.latitude,
-                widget.produtos[0].localizacao.longitude)
+            ? LatLng(widget.produtos[0].localizacao.latitude!,
+                widget.produtos[0].localizacao.longitude!)
             : LatLng(mapProvider.latitude, mapProvider.longitude),
         initialZoom: map_lib.defaultZoom,
         cameraConstraint: CameraConstraint.contain(

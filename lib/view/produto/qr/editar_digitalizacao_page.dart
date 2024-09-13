@@ -16,8 +16,7 @@ import 'package:provider/provider.dart';
 class EditarDigitalizacaoPage extends StatefulWidget {
   final Produto produto;
 
-  const EditarDigitalizacaoPage(
-      {super.key, required this.produto});
+  const EditarDigitalizacaoPage({super.key, required this.produto});
 
   static const String routeName = '/digitalizar/confirmar/editar';
 
@@ -28,6 +27,7 @@ class EditarDigitalizacaoPage extends StatefulWidget {
 class _CadastrarProdutoPageState extends State<EditarDigitalizacaoPage> {
   final _formKey = GlobalKey<FormState>();
   final _nomeProdutoController = TextEditingController();
+  final _descricaoProdutoController = TextEditingController();
 
   @override
   void initState() {
@@ -35,6 +35,7 @@ class _CadastrarProdutoPageState extends State<EditarDigitalizacaoPage> {
 
     setState(() {
       _nomeProdutoController.text = widget.produto.nome;
+      _descricaoProdutoController.text = widget.produto.descricao ?? '';
     });
   }
 
@@ -54,7 +55,8 @@ class _CadastrarProdutoPageState extends State<EditarDigitalizacaoPage> {
         body: Column(
           children: [
             Padding(
-                padding: const EdgeInsets.all(10.0), child: _editarDigitalizacaoPage())
+                padding: const EdgeInsets.all(10.0),
+                child: _editarDigitalizacaoPage())
           ],
         ));
   }
@@ -85,14 +87,33 @@ class _CadastrarProdutoPageState extends State<EditarDigitalizacaoPage> {
                       },
                     ),
                     const SizedBox(height: 20),
+                    const Text("Descrição do produto",
+                        style: TextStyle(
+                            fontSize: 20.0, fontWeight: FontWeight.bold)),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
+                      controller: _descricaoProdutoController,
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Campo não pode ser vazio';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
                     Row(children: [
                       Expanded(
                           child: OutlinedButton(
-                        onPressed:  (){
-                                if (_formKey.currentState!.validate()) {
-                                  Navigator.pop(context, _nomeProdutoController.text);
-                                }
-                              },
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            Navigator.pop(context, <String, Object?>{
+                              "nome": _nomeProdutoController.text,
+                              "descricao": _descricaoProdutoController.text
+                            });
+                          }
+                        },
                         child: const Text('Editar'),
                       ))
                     ]),

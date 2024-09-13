@@ -51,7 +51,7 @@ class _CodigoVerificacaoPageState extends State<CodigoVerificacaoPage> {
         if (widget.tipo == "VERIFICAR_EMAIL") {
           await _authRest.verificarEmail(widget.email, codigo);
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Email verificado com sucesso!")));
+              const SnackBar(content: Text("Email verificado com sucesso!"), behavior: SnackBarBehavior.floating));
           Navigator.pushNamed(context, Routes.login);
         } else if (widget.tipo == "REDEFINIR_SENHA") {
           Navigator.pushNamed(context, Routes.esqueciSenhaRedefinicao,
@@ -62,7 +62,7 @@ class _CodigoVerificacaoPageState extends State<CodigoVerificacaoPage> {
         }
       } else {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(retorno)));
+            .showSnackBar(SnackBar(content: Text(retorno), behavior: SnackBarBehavior.floating));
       }
     } catch (exception) {
       showError(context, "Erro ", exception.toString());
@@ -98,7 +98,7 @@ class _CodigoVerificacaoPageState extends State<CodigoVerificacaoPage> {
       if (enviado) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Enviado com sucesso!')),
+            const SnackBar(content: Text('Enviado com sucesso!'), behavior: SnackBarBehavior.floating),
           );
         }
       } else {
@@ -106,7 +106,7 @@ class _CodigoVerificacaoPageState extends State<CodigoVerificacaoPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
                 content:
-                    Text('Erro ao enviar código de verificação de email!')),
+                    Text('Erro ao enviar código de verificação de email!'), behavior: SnackBarBehavior.floating),
           );
         }
       }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:location_picker_flutter_map/location_picker_flutter_map.dart';
+import 'package:papapreco/misc/auth/map_provider.dart';
 import 'package:papapreco/routes/routes.dart';
 import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
+import 'package:provider/provider.dart';
 
 class DefinirLocalizacaoWidget extends StatefulWidget {
   const DefinirLocalizacaoWidget(
@@ -10,13 +12,15 @@ class DefinirLocalizacaoWidget extends StatefulWidget {
       required this.latitude,
       required this.longitude,
       required this.localizacaoString,
-      this.distancia});
+      this.distancia,
+      this.futureLocalizacao = false});
 
   final Function(double, double, String) onData;
-  final double latitude;
-  final double longitude;
-  final String localizacaoString;
+  final double? latitude;
+  final double? longitude;
+  final String? localizacaoString;
   final double? distancia;
+  final bool futureLocalizacao;
 
   @override
   State<DefinirLocalizacaoWidget> createState() =>
@@ -25,23 +29,43 @@ class DefinirLocalizacaoWidget extends StatefulWidget {
 
 class _DefinirLocaliacaoWidgetState extends State<DefinirLocalizacaoWidget> {
   bool _isLoading = false;
-  bool _isBuscando = false;
 
   @override
   void initState() {
     super.initState();
+
+    if (widget.futureLocalizacao &&
+      widget.localizacaoString != null && widget.localizacaoString!.isEmpty) {
+        setState(() {
+          _isLoading = true;
+        });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant DefinirLocalizacaoWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.futureLocalizacao &&
+      widget.localizacaoString != oldWidget.localizacaoString) {
+      if (widget.localizacaoString != null && widget.localizacaoString!.isNotEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _setLocalizacaoAtualString(double latitude, double longitude) async {
     setState(() {
-      _isBuscando = true;
+      _isLoading = true;
     });
     
     String reverseGeocodingString =
         await map_lib.reverseGeocodingString(latitude, longitude);
 
     setState(() {
-      _isBuscando = false;
+      _isLoading = false;
     });
 
     widget.onData(latitude, longitude, reverseGeocodingString);
@@ -51,8 +75,8 @@ class _DefinirLocaliacaoWidgetState extends State<DefinirLocalizacaoWidget> {
     final LatLong? result = await Navigator.pushNamed(
         context, Routes.definirLocalizacao,
         arguments: <String, Object>{
-          "latitude": widget.latitude,
-          "longitude": widget.longitude,
+          "latitude": widget.latitude ?? map_lib.defaultLatitude,
+          "longitude": widget.longitude ?? map_lib.defaultLongitude,
         }) as LatLong?;
 
     //clicou em retornar
@@ -67,20 +91,10 @@ class _DefinirLocaliacaoWidgetState extends State<DefinirLocalizacaoWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Verifica se o estado precisa ser atualizado quando o widget é reconstruído
-    if (!widget.localizacaoString.isEmpty && !_isBuscando) {
-      setState(() {
-        _isLoading = false;
-      });
-    } else {
-      setState(() {
-        _isLoading = true;
-      });
-    }
 
     return TextButton(
         onPressed: () {
-          if(!_isLoading && !_isBuscando) {
+          if(!_isLoading) {
             _navigateDefinirLocalizacaoPage(context);
           }
         },
@@ -97,7 +111,7 @@ class _DefinirLocaliacaoWidgetState extends State<DefinirLocalizacaoWidget> {
   Widget _text() {
     if (!_isLoading) {
       return Flexible(
-      child:Text(widget.localizacaoString +
+      child:Text(widget.localizacaoString ?? 'Selecione uma localizacao' +
                 (widget.distancia != null ? ' (${widget.distancia?.toInt().toString()}km)' : ''),
                 style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.normal)),
                 );

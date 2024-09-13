@@ -1,4 +1,6 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:papapreco/api/firebase_api.dart';
 import 'package:papapreco/misc/auth/auth_provider.dart';
 import 'package:papapreco/misc/auth/map_provider.dart';
 import 'package:papapreco/theme/theme.dart';
@@ -19,13 +21,18 @@ import 'package:papapreco/view/produto/listar_produtos_mapa_page.dart';
 import 'package:papapreco/view/produto/listar_produtos_page.dart';
 import 'package:papapreco/view/produto/sugerir_edicao_page.dart';
 import 'package:papapreco/view/usuario/alterar_senha_page.dart';
+import 'package:papapreco/view/usuario/alertas_usuario_page.dart';
 import 'package:papapreco/widgets/end_drawer.dart';
 import 'package:papapreco/widgets/map/definir_localizacao_widget.dart';
 import 'package:provider/provider.dart';
 
 import 'routes/routes.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await FirebaseApi().initNotifications();
+
   runApp(
     MultiProvider(
       providers: [
@@ -70,6 +77,7 @@ class MyApp extends StatelessWidget {
         Routes.esqueciSenha: (context) => EsqueciSenhaPage(),
         Routes.alterarSenha: (context) => const AlterarSenhaPage(),
         Routes.inserirQr: (context) => const InserirQrcodePage(),
+        Routes.alertasUsuario: (context) => const AlertasUsuarioPage(),
       },
       onGenerateRoute: (settings) {
         final Map args = settings.arguments as Map<String, Object?>;
@@ -160,10 +168,13 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        scrolledUnderElevation: 0
       ),
       endDrawer:
           context.watch<AuthProvider>().isLoggedIn ? const EndDrawer() : null,
-      body: Column(
+      body: SingleChildScrollView(
+        reverse: true,
+              child: Column(
         children: <Widget>[
           Container(
             padding: const EdgeInsets.all(8.0),
@@ -181,10 +192,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           const SizedBox(height: 20),
-          Expanded(
-            flex: 1,
-            child: SingleChildScrollView(
-              child: Form(
+          Form(
                   key: _formKey,
                   child: Column(
                     children: <Widget>[
@@ -220,6 +228,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               mapProvider.setLongitude(lng);
                               mapProvider.setLocalizacaoString(loc);
                             },
+                            futureLocalizacao: true,
                           );
                         },
                       ),
@@ -230,10 +239,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ],
                   )),
-            ),
-          ),
         ],
-      ),
+      )),
       bottomNavigationBar: context.watch<AuthProvider>().isLoggedIn
           ? null
           : BottomAppBar(

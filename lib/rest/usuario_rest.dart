@@ -28,4 +28,22 @@ class UsuarioRest {
       throw Exception(response.body);
     }
   }
+
+  Future<Usuario> alterarLocalizacaoAlertas(Usuario usuario, String token) async {
+    final http.Response response = await http.put(
+      Uri.http(API.endpoint, '${API.name}/usuarios/alterarLocalizacaoAlertas'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token',
+      },
+      body: usuario.toJson());
+
+    if (response.statusCode == 200) {
+      return Usuario.fromJson(response.body);
+    } else if (response.statusCode == 401) {
+      throw UnauthorizedException('Token inválido ou expirado.');
+    } else {
+      throw Exception(response.body);
+    }
+  }
 }

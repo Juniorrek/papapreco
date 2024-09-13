@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:papapreco/misc/auth/jwt_lib.dart' as jwt_lib;
+import 'package:papapreco/model/localizacao.dart';
 import 'package:papapreco/model/usuario.dart';
 
 
@@ -51,4 +52,22 @@ class AuthProvider with ChangeNotifier {
 
     notifyListeners();
   }
+
+  Future<void> setUsuario(Usuario usuario) async {
+    _usuario = usuario;
+
+    await _storage.write(key: 'usuario', value: usuario.toJson());
+
+    notifyListeners();
+  }
+
+  /*Future<void> setLocalizacao(Localizacao localizacao) async {
+    if (usuario != null) {
+      usuario!.localizacao = localizacao;
+
+      await _storage.write(key: 'usuario', value: usuario!.toJson());
+
+      notifyListeners();
+    }
+  }*/
 }

@@ -42,13 +42,13 @@ class _EsqueciSenhaPageState extends State<EsqueciSenhaPage> {
             });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erro ao enviar código de verificação de email!')),
+            const SnackBar(content: Text('Erro ao enviar código de verificação de email!'), behavior: SnackBarBehavior.floating),
           );
         }
       } else {
         //Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(retorno)));
+            .showSnackBar(SnackBar(content: Text(retorno), behavior: SnackBarBehavior.floating));
       }
     } catch (exception) {
       showError(context, "Erro ", exception.toString());

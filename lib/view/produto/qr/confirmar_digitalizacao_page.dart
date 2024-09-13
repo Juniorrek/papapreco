@@ -3,11 +3,13 @@ import 'package:intl/intl.dart';
 import 'package:papapreco/exception/unauthorized_exception.dart';
 import 'package:papapreco/helper/error.dart';
 import 'package:papapreco/misc/auth/auth_provider.dart';
+import 'package:papapreco/misc/auth/map_provider.dart';
 import 'package:papapreco/model/produto.dart';
 import 'package:papapreco/model/usuario.dart';
 import 'package:papapreco/repositories/produto_repository.dart';
 import 'package:papapreco/routes/routes.dart';
 import 'package:papapreco/view/produto/qr/editar_digitalizacao_page.dart';
+import 'package:papapreco/widgets/map/definir_localizacao_widget.dart';
 import 'package:provider/provider.dart';
 
 class ConfirmarDigitalizacaoPage extends StatefulWidget {
@@ -32,6 +34,12 @@ class _ConfirmarDigitalizacaoPageState
     symbol: 'R\$',
     decimalDigits: 2,
   );
+  String? _localizacaoString = null;
+  double? _latitude = null;
+  double? _longitude = null;
+
+  //bool _falhaLocalizacao = false;
+  bool _falhaLocalizacao = true;
 
   @override
   void initState() {
@@ -46,10 +54,24 @@ class _ConfirmarDigitalizacaoPageState
 
     List<Produto> tempList = await _buscarProdutosPorUrlQrNFCeFazenda();
 
-    setState(() {
-      _lista = tempList;
-      _isLoading = false; // Termina o carregamento
-    });
+    if (tempList == null || tempList.isEmpty) {
+      Navigator.pop(context);
+      showError(context, "Nenhum produto encontrado!", "");
+    } else {
+      setState(() {
+        _lista = tempList;
+        _isLoading = false;
+
+        /*if (_lista[0].localizacao.latitude == null) {
+          _falhaLocalizacao = true;
+        }*///Sempre true por hr pra poder editar
+        if (_lista[0].localizacao.latitude != null) {
+          _latitude = _lista[0].localizacao.latitude;
+          _longitude = _lista[0].localizacao.longitude;
+          _localizacaoString = _lista[0].localizacao.descricao;
+        }
+      });
+    }
   }
 
   Future<List<Produto>> _buscarProdutosPorUrlQrNFCeFazenda() async {
@@ -75,16 +97,35 @@ class _ConfirmarDigitalizacaoPageState
 
   Future<void> _editItem(BuildContext context, int index) async {
     Produto p = _lista[index];
-    final result = await Navigator.pushNamed(
+    final Map? result = await Navigator.pushNamed(
       context,
       EditarDigitalizacaoPage.routeName,
       arguments: <String, Object?>{"produto": p},
-    );
+    ) as Map<String, Object?>?;
 
     if (result == null) return;
+    if (!context.mounted) return;
 
     setState(() {
-      _lista[index].nome = result.toString();
+      _lista[index].nome = result['nome'];
+      _lista[index].descricao = result['descricao'];
+    });
+  }
+
+  void _setLocalizacaoProdutos(
+      double latitude, double longitude, String localizacaoString) {
+    setState(() {
+      _isLoading = true;
+      for (var p in _lista) {
+        p.localizacao.latitude = latitude;
+        p.localizacao.longitude = longitude;
+        p.localizacao.descricao = localizacaoString;
+      }
+      _latitude = latitude;
+      _longitude = longitude;
+      _localizacaoString = localizacaoString;
+
+      _isLoading = false;
     });
   }
 
@@ -126,13 +167,13 @@ class _ConfirmarDigitalizacaoPageState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Produtos inseridos com sucesso!')),
+        const SnackBar(content: Text('Produtos inseridos com sucesso!'), behavior: SnackBarBehavior.floating),
       );
 
       Navigator.pushReplacementNamed(context, Routes.home);
     } on UnauthorizedException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login expirado, entre novamente!')),
+        const SnackBar(content: Text('Login expirado, entre novamente!'), behavior: SnackBarBehavior.floating),
       );
       Navigator.pushNamed(context, Routes.login);
     } catch (exception) {
@@ -150,6 +191,7 @@ class _ConfirmarDigitalizacaoPageState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         title: const Text("Papa Preço"),
       ),
       body: _isLoading
@@ -162,16 +204,34 @@ class _ConfirmarDigitalizacaoPageState
 
   Widget _tela() {
     return Column(children: [
-      Text(_lista[0].localizacao.descricao ?? '',
-          style: const TextStyle(
-            fontSize: 18.0,
-            fontWeight: FontWeight.bold,
-          )),
+      if (!_falhaLocalizacao) ...[
+        Text(_lista[0].localizacao.descricao ?? '',
+            style: const TextStyle(
+              fontSize: 18.0,
+              fontWeight: FontWeight.bold,
+            ))
+      ],
       Text(_dataFormatter.format(_lista[0].dataObservacao!),
           style: const TextStyle(
             fontSize: 18.0,
             fontWeight: FontWeight.normal,
           )),
+      if (_falhaLocalizacao) ...[
+        const SizedBox(height: 20),
+        const Text("Localizacao",
+            style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
+        Consumer<MapProvider>(
+          builder: (context, mapProvider, child) {
+            return DefinirLocalizacaoWidget(
+                latitude: _latitude,
+                longitude: _longitude,
+                localizacaoString: _localizacaoString,
+                onData: (lat, lng, loc) {
+                  _setLocalizacaoProdutos(lat, lng, loc);
+                });
+          },
+        )
+      ],
       const Divider(),
       Expanded(
           child: ListView.builder(
@@ -183,7 +243,9 @@ class _ConfirmarDigitalizacaoPageState
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton(
           onPressed: () {
-            _cadastrarProdutos();
+            if (_latitude != null) {
+              _cadastrarProdutos();
+            }
           },
           child: const Text('Inserir'),
         ),

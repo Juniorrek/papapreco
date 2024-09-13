@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
+import 'package:papapreco/util/configs.dart';
 
 class MapProvider with ChangeNotifier {
   double _latitude = map_lib.defaultLatitude;
   double _longitude = map_lib.defaultLongitude;
   String _localizacaoString = '';
-  double _distancia = 5.0;
+  double _distancia = 10.0;
 
   double get latitude => _latitude;
   double get longitude => _longitude;
@@ -34,29 +35,31 @@ class MapProvider with ChangeNotifier {
   }
 
   Future<void> setCurrentPosition() async {
-    setLatitude(map_lib.defaultLatitude); 
+    if (Configs.status == StatusConfig.pc) {
+      setLatitude(map_lib.defaultLatitude);
       setLongitude(map_lib.defaultLongitude);
 
-      String reverseGeocodingString =
-        await map_lib.reverseGeocodingString(map_lib.defaultLatitude, map_lib.defaultLongitude);
-      setLocalizacaoString(reverseGeocodingString);
-
-    /*Position? p = await map_lib.currentLocation();
-
-    if (p != null) {
-      setLatitude(p.latitude); 
-      setLongitude(p.longitude);  
-
-      String reverseGeocodingString =
-        await map_lib.reverseGeocodingString(latitude, longitude);
+      String reverseGeocodingString = await map_lib.reverseGeocodingString(
+          map_lib.defaultLatitude, map_lib.defaultLongitude);
       setLocalizacaoString(reverseGeocodingString);
     } else {
-      setLatitude(map_lib.defaultLatitude); 
-      setLongitude(map_lib.defaultLongitude);
+      Position? p = await map_lib.currentLocation();
 
-      String reverseGeocodingString =
-        await map_lib.reverseGeocodingString(map_lib.defaultLatitude, map_lib.defaultLongitude);
-      setLocalizacaoString(reverseGeocodingString);
-    }*/
+      if (p != null) {
+        setLatitude(p.latitude);
+        setLongitude(p.longitude);
+
+        String reverseGeocodingString =
+            await map_lib.reverseGeocodingString(latitude, longitude);
+        setLocalizacaoString(reverseGeocodingString);
+      } else {
+        setLatitude(map_lib.defaultLatitude);
+        setLongitude(map_lib.defaultLongitude);
+
+        String reverseGeocodingString = await map_lib.reverseGeocodingString(
+            map_lib.defaultLatitude, map_lib.defaultLongitude);
+        setLocalizacaoString(reverseGeocodingString);
+      }
+    }
   }
 }

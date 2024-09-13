@@ -16,6 +16,7 @@ import 'package:papapreco/view/produto/listar_produtos_mapa_page.dart';
 import 'package:papapreco/view/produto/listar_produtos_page.dart';
 import 'package:papapreco/view/produto/sugerir_edicao_page.dart';
 import 'package:papapreco/view/usuario/alterar_senha_page.dart';
+import 'package:papapreco/view/usuario/alertas_usuario_page.dart';
 import 'package:papapreco/view/usuario/produtos_usuario_page.dart';
 
 class Routes {
@@ -48,4 +49,5 @@ class Routes {
   //SEM FUNCIONALIDADE
   //static const String produtosUsuario = ProdutosUsuarioPage.routeName;
   static const String alterarSenha = AlterarSenhaPage.routeName;
+  static const String alertasUsuario = AlertasUsuarioPage.routeName;
 }

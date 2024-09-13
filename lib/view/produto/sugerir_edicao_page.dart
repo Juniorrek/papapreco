@@ -84,7 +84,7 @@ class _SugerirEdicaoPageState extends State<SugerirEdicaoPage> {
       });
     } on UnauthorizedException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login expirado, entre novamente!')),
+        const SnackBar(content: Text('Login expirado, entre novamente!'), behavior: SnackBarBehavior.floating),
       );
       Navigator.pushNamed(context, Routes.login);
     } catch (exception) {
@@ -105,13 +105,13 @@ class _SugerirEdicaoPageState extends State<SugerirEdicaoPage> {
           title: const Text("Papa Preço"),
           //automaticallyImplyLeading: false,
         ),
-        body: Column(
+        body: SingleChildScrollView(child:  Column(
           children: [
             Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: _sugerirEdicaoPage())
           ],
-        ));
+        )));
   }
 
   Row _sugerirEdicaoPage() {

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:papapreco/routes/routes.dart';
 
 class AnalyzeImageFromGalleryButton extends StatelessWidget {
-  const AnalyzeImageFromGalleryButton({required this.controller, super.key});
+  AnalyzeImageFromGalleryButton({required this.controller, super.key});
 
   final MobileScannerController controller;
+
+  bool _foi = false;
 
   @override
   Widget build(BuildContext context) {
@@ -33,18 +36,29 @@ class AnalyzeImageFromGalleryButton extends StatelessWidget {
         }
 
         if (barcodes != null) {
-          print("achou");
-          print(barcodes.barcodes.firstOrNull?.displayValue);
+          Barcode? _barcode = barcodes.barcodes.firstOrNull;
+          if (!_foi && _barcode != null) {
+            _foi = true;
+            Navigator.popAndPushNamed(context, Routes.confirmarDigitalizacao,
+                arguments: <String, String?>{
+                  "urlQr": _barcode?.displayValue
+                  //"https://www.fazenda.pr.gov.br/nfce/qrcode?p=41240778116670001994650110000706859008861151|2|1|19|191.37|36424547706431514c323277326e5933526a4272497a356d31746b3d|1|1E71BE91A8A04C4D104650E2FB2AB5B14CDB91E8"
+                });
+          }
+          /*print("achou");
+          print(barcodes.barcodes.firstOrNull?.displayValue);*/
         }
 
         final SnackBar snackbar = barcodes != null
             ? const SnackBar(
-                content: Text('Barcode found!'),
+                content: Text('Sucesso!'),
                 backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating
               )
             : const SnackBar(
-                content: Text('No barcode found!'),
+                content: Text('QR Code não encontrado!'),
                 backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating
               );
 
         ScaffoldMessenger.of(context).showSnackBar(snackbar);

@@ -2,8 +2,8 @@ import 'dart:convert';
 
 class Localizacao {
   int? id;
-  double latitude;
-  double longitude;
+  double? latitude;
+  double? longitude;
   String? descricao;
 
   Localizacao(this.id, this.latitude, this.longitude, this.descricao);

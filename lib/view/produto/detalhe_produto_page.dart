@@ -8,6 +8,7 @@ import 'package:papapreco/model/produto.dart';
 import 'package:papapreco/repositories/produto_repository.dart';
 import 'package:papapreco/repositories/voto_usuario_produto_repository.dart';
 import 'package:papapreco/routes/routes.dart';
+import 'package:papapreco/widgets/end_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -63,8 +64,8 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
           _produto = Future.value(produto);
         });
 
-        _buscarHistoricoProduto(produto.nome, produto.localizacao.latitude,
-            produto.localizacao.longitude);
+        _buscarHistoricoProduto(produto.nome, produto.localizacao.latitude!,
+            produto.localizacao.longitude!);
       });
     } catch (exception) {
       showError(context, "Erro buscando produto", exception.toString());
@@ -106,32 +107,31 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
       if (!produto.usuarioJaVotou(usuarioId)) {
         await _votoRepository.votar(produto.id!, usuarioId, voto, token);
         if (mounted) {
-        Navigator.of(context).pop();
+          Navigator.of(context).pop();
           showSuccess(context, "Voto inserido com sucesso");
         }
       } else {
         if (produto.usuarioJaVotouVoto(usuarioId, voto)) {
           await _votoRepository.cancelarVoto(produto.id!, usuarioId, token);
           if (mounted) {
-        Navigator.of(context).pop();
+            Navigator.of(context).pop();
             showSuccess(context, "Voto cancelado com sucesso");
           }
         } else {
           await _votoRepository.mudarVoto(produto.id!, usuarioId, voto, token);
           if (mounted) {
-        Navigator.of(context).pop();
+            Navigator.of(context).pop();
             showSuccess(context, "Voto alterado com sucesso");
           }
         }
       }
 
-      if (mounted) {
-      }
+      if (mounted) {}
 
       _buscarProduto(widget.idProduto);
     } on UnauthorizedException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login expirado, entre novamente!')),
+        const SnackBar(content: Text('Login expirado, entre novamente!'), behavior: SnackBarBehavior.floating),
       );
       Navigator.pushNamed(context, Routes.login);
     } catch (exception) {
@@ -216,6 +216,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
           title: const Text("Papa Preço"),
           //automaticallyImplyLeading: false,
         ),
+        endDrawer: const EndDrawer(),
         body: Column(
           children: [
             FutureBuilder<Produto>(
@@ -287,11 +288,11 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(selecionado?.localizacao.descricao ?? '',
+                  /*Text(selecionado?.localizacao.descricao ?? '',
                       style: const TextStyle(
                         fontSize: 18.0,
                         fontWeight: FontWeight.normal,
-                      )),
+                      )),*/
                   Text(_dataFormatter.format(produto.dataObservacao!),
                       style: const TextStyle(
                         fontSize: 18.0,
@@ -328,7 +329,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                       content:
-                                          Text('Você precisa estar logado.')));
+                                          Text('Você precisa estar logado.'), behavior: SnackBarBehavior.floating));
                             } else {
                               _votar(produto, idUsuarioLogado!, false);
                             }
@@ -366,7 +367,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                       content:
-                                          Text('Você precisa estar logado.')));
+                                          Text('Você precisa estar logado.'), behavior: SnackBarBehavior.floating));
                             } else {
                               _votar(produto, idUsuarioLogado!, true);
                             }
@@ -416,11 +417,14 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                   fontSize: 18.0,
                   fontWeight: FontWeight.bold,
                 )),
-            Text(produto.localizacao.descricao ?? "",
+            Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 8),
+                        child:Text(produto.localizacao.descricao ?? "",
                 style: const TextStyle(
                   fontSize: 18.0,
                   fontWeight: FontWeight.normal,
-                )),
+                ))),
             Text(_dataFormatter.format(produto.dataObservacao!),
                 style: const TextStyle(
                   fontSize: 18.0,
@@ -443,7 +447,16 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                     },
                     child: Text(
                         _moneyFormatter.format(produto.preco.toDouble())))),
-            Text(produto.descricao ?? ''),
+            const SizedBox(
+              height: 20,
+            ),
+            Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 8),
+                        child:Text(produto.descricao ?? '')),
+            const SizedBox(
+              height: 20,
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -507,7 +520,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
                         if (!isLoggedIn) {
                           ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                  content: Text('Você precisa estar logado.')));
+                                  content: Text('Você precisa estar logado.'), behavior: SnackBarBehavior.floating));
                         } else {
                           _navigateSugerirEdicaoPage(context, produto);
                         }

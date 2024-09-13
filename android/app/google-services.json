@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "301144420668",
+    "project_id": "papapreco-38a7a",
+    "storage_bucket": "papapreco-38a7a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:301144420668:android:2cdb00a94216ce2c2fae39",
+        "android_client_info": {
+          "package_name": "br.com.papapreco"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrNOfkAk48KqRYAsnb3n1k5eaiVsp5HNU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

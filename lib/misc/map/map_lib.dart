@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:papapreco/util/configs.dart';
 
 double defaultLatitude = -25.441105;
 double defaultLongitude = -49.276855;
@@ -11,6 +12,10 @@ double defaultZoom = 18;
 Future<dynamic> geocoding(String query) async {
   final http.Response response = await http.get(Uri.parse(
       'https://nominatim.openstreetmap.org/search?format=json&q=$query'));
+
+  if (Configs.status == StatusConfig.cel) {
+    print(response.request?.url.toString());
+  }
 
   var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes));
 
@@ -56,7 +61,8 @@ Future<String> reverseGeocodingShop(double latitude, double longitude) async {
     if (currentGeocoding['address'] != null &&
         currentGeocoding['address']['shop'] != null) {
       return currentGeocoding['address']['shop'];
-    } else if (currentGeocoding['class'] == 'shop' && currentGeocoding['name'] != null) {
+    } else if (currentGeocoding['class'] == 'shop' &&
+        currentGeocoding['name'] != null) {
       return currentGeocoding['name'];
     } else if (currentGeocoding['address'] != null &&
         currentGeocoding['address']['road'] != null) {

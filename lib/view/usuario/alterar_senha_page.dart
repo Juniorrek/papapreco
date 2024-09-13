@@ -43,13 +43,13 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
         Usuario u = await _usuarioRest.alterarSenha(usuario, _currentPasswordController.text, token);
 
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Sucesso!")));
+            .showSnackBar(const SnackBar(content: Text("Sucesso!"), behavior: SnackBarBehavior.floating));
             
         Navigator.pop(context);
         Navigator.pop(context);
     } on UnauthorizedException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login expirado, entre novamente!')),
+        const SnackBar(content: Text('Login expirado, entre novamente!'), behavior: SnackBarBehavior.floating),
       );
       Navigator.pushNamed(context, Routes.login);
     } catch (exception) {

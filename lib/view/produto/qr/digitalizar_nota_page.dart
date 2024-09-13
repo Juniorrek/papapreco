@@ -27,6 +27,8 @@ class _DigitalizarNotaPageState extends State<DigitalizarNotaPage> with WidgetsB
   Barcode? _barcode;
   StreamSubscription<Object?>? _subscription;
 
+  bool _foi = false;
+
   Widget _buildBarcode(Barcode? value) {
     if (value == null) {
       return const Text(
@@ -47,12 +49,16 @@ class _DigitalizarNotaPageState extends State<DigitalizarNotaPage> with WidgetsB
     if (mounted) {
       setState(() {
         _barcode = barcodes.barcodes.firstOrNull;
+
+        if (!_foi) {
+        _foi = true;
         Navigator.popAndPushNamed(
           context, Routes.confirmarDigitalizacao,
           arguments: <String, String?>{
             "urlQr": _barcode?.displayValue
                 //"https://www.fazenda.pr.gov.br/nfce/qrcode?p=41240778116670001994650110000706859008861151|2|1|19|191.37|36424547706431514c323277326e5933526a4272497a356d31746b3d|1|1E71BE91A8A04C4D104650E2FB2AB5B14CDB91E8"
           });
+        }
       });
     }
   }

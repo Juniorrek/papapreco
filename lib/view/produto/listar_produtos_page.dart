@@ -99,6 +99,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
 
   ListTile _buildItem(BuildContext context, int index) {
     Produto p = _lista[index];
+    final mapProvider = Provider.of<MapProvider>(context);
 
     return ListTile(
       leading: Container(
@@ -160,14 +161,21 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
       },
       trailing: PopupMenuButton<String>(
         icon: const Icon(Icons.more_vert),
-        onSelected: (String value) {
+        onSelected: (String value) async {
           final isLoggedIn =
               Provider.of<AuthProvider>(context, listen: false).isLoggedIn;
           if (value == 'edit') {
             if (!isLoggedIn) {
               ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Você precisa estar logado.')));
+                  const SnackBar(content: Text('Você precisa estar logado.'), behavior: SnackBarBehavior.floating));
+            } else {
+              await Navigator.pushNamed(context, Routes.sugerirEdicao,
+        arguments: <String, Object>{"produto": p});
             }
+
+                  if (!context.mounted) return;
+                  _refreshList(mapProvider.latitude, mapProvider.longitude,
+                      mapProvider.distancia);
           } else if (value == 'map') {
             Navigator.pushNamed(context, Routes.listarProdutosMapa,
                 arguments: <String, Object>{
@@ -245,30 +253,35 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
 
     return Scaffold(
         appBar: AppBar(
+        scrolledUnderElevation: 0,
             title: const Text("Papa Preço"),
             leading: BackButton(
                 onPressed: () => Navigator.pop(context,
                     <String, Object>{"palavra": _palavraController.text}))),
-        endDrawer: isLoggedIn ? const EndDrawer() : null,
-        floatingActionButton: isLoggedIn
-            ? FloatingActionButton(
+        endDrawer: const EndDrawer(),
+        floatingActionButton: FloatingActionButton(
                 onPressed: () async {
-                  await Navigator.pushNamed(context, Routes.cadastrarProduto,
-                      arguments: <String, Object>{
-                        "latitude": mapProvider.latitude,
-                        "longitude": mapProvider.longitude,
-                        "localizacaoString": mapProvider.localizacaoString,
-                      });
-                  if (!context.mounted) return;
-                  _refreshList(mapProvider.latitude, mapProvider.longitude,
-                      mapProvider.distancia);
+                  if (!isLoggedIn) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Você precisa estar logado.'), behavior: SnackBarBehavior.floating));
+                  } else {
+                    await Navigator.pushNamed(context, Routes.cadastrarProduto,
+                        arguments: <String, Object>{
+                          "latitude": mapProvider.latitude,
+                          "longitude": mapProvider.longitude,
+                          "localizacaoString": mapProvider.localizacaoString,
+                        });
+                    if (!context.mounted) return;
+                    _refreshList(mapProvider.latitude, mapProvider.longitude,
+                        mapProvider.distancia);
+                  }
                 },
                 foregroundColor: Colors.white,
                 backgroundColor: Colors.green,
                 shape: const CircleBorder(),
                 child: const Icon(Icons.plus_one),
-              )
-            : null,
+              ),
         body: Column(
           children: [
             Form(

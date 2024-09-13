@@ -93,7 +93,7 @@ class _CadastrarProdutoPageState extends State<CadastrarProdutoPage> {
       Navigator.pop(context);
     } on UnauthorizedException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login expirado, entre novamente!')),
+        const SnackBar(content: Text('Login expirado, entre novamente!'), behavior: SnackBarBehavior.floating),
       );
       Navigator.pushNamed(context, Routes.login);
     } catch (exception) {
@@ -177,7 +177,7 @@ class _CadastrarProdutoPageState extends State<CadastrarProdutoPage> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    const Text("Novo Preço",
+                    const Text("Preço",
                         style: TextStyle(
                             fontSize: 20.0, fontWeight: FontWeight.bold)),
                     TextFormField(

@@ -1,9 +1,33 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.2.2'  // Verifique a versão do Android Gradle Plugin
+        classpath 'com.google.gms:google-services:4.3.15'  // Adicione o classpath do Google Services
+    }
+}
+
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
+
+    /*dependencies {
+        classpath 'com.android.tools.build:gradle:7.2.2' 
+        classpath 'com.google.gms:google-services:4.4.2'
+    }*/
+    /*plugins {
+        id 'com.google.gms.google-services' version '4.4.2' apply false
+    }*/
+    
 }
+
+/*plugins {
+    id 'com.google.gms.google-services' version '4.4.2' apply false
+}*/
 
 rootProject.buildDir = "../build"
 subprojects {

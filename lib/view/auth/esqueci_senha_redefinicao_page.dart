@@ -30,12 +30,12 @@ class _EsqueciSenhaRedefinicaoPageState
 
       if (retorno == 'OK') {
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Sucesso!")));
+            .showSnackBar(const SnackBar(content: Text("Sucesso!"), behavior: SnackBarBehavior.floating));
             
         Navigator.popUntil(context, ModalRoute.withName(Routes.login));
       } else {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(retorno)));
+            .showSnackBar(SnackBar(content: Text(retorno), behavior: SnackBarBehavior.floating));
       }
     } catch (exception) {
       showError(context, "Erro ", exception.toString());

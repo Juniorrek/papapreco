@@ -8,63 +8,87 @@ class EndDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final usuario = context.read<AuthProvider>().usuario!;
+    final isLoggedIn = context.watch<AuthProvider>().isLoggedIn;
+    final usuario = context.watch<AuthProvider>().usuario;
+
     return Drawer(
       child: Column(
         children: [
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                DrawerHeader(
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
+          if (isLoggedIn && usuario != null)
+            DrawerHeader(
+              decoration: const BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          usuario.nome,
+                          style: const TextStyle(color: Colors.white, fontSize: 24),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          usuario.email,
+                          style: const TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.person, size: 80, color: Colors.white),
-                      const SizedBox(width: 16),
-                      Expanded(child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(usuario.nome, style: const TextStyle(color: Colors.white, fontSize: 24)),
-                          const SizedBox(height: 8),
-                          Text(usuario.email, style: const TextStyle(color: Colors.white70, fontSize: 16)),
-                        ],
-                      )),
-                    ],
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.home),
-                  title: const Text('Home'),
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, Routes.home);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.key),
-                  title: const Text('Alterar senha'),
-                  onTap: () {
-                    Navigator.pushNamed(context, Routes.alterarSenha);
-                  },
-                ),
-                // Other list tiles if any
-              ],
+                ],
+              ),
             ),
-          ),
-          // Add a Spacer to push the logout button to the bottom
-          const Spacer(),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Logout'),
-            onTap: () {
-              context.read<AuthProvider>().logout();
-              Navigator.pushReplacementNamed(context, Routes.home);
-              //Navigator.pop(context);
-            },
-          ),
+          if (isLoggedIn && usuario != null) ...[
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('Home'),
+              onTap: () {
+                Navigator.pushReplacementNamed(context, Routes.home);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.key_outlined),
+              title: const Text('Alterar senha'),
+              onTap: () {
+                Navigator.pushNamed(context, Routes.alterarSenha);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_active_outlined),
+              title: const Text('Alertas de preço'),
+              onTap: () {
+                Navigator.pushNamed(context, Routes.alertasUsuario);
+              },
+            ),
+          ] else ...[
+            const Spacer(),
+            ListTile(
+              leading: const Icon(Icons.login),
+              title: const Text('Login'),
+              onTap: () {
+                Navigator.pushReplacementNamed(context, Routes.login);
+              },
+            ),
+            const Spacer(),
+          ],
+          if (isLoggedIn) ...[
+            const Spacer(),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () {
+                context.read<AuthProvider>().logout();
+                //Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, Routes.login);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Sucesso!'), behavior: SnackBarBehavior.floating),
+                );
+              },
+            ),
+          ],
         ],
       ),
     );

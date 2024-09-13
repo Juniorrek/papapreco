@@ -34,12 +34,17 @@ class _LoginPageState extends State<LoginPage> {
     ],
   );
 
+  bool _isLoading = false;
+
   @override
   void initState() {
     super.initState();
   }
 
   void _signInGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       /* 
       TODO: remove this after testing was finished,
@@ -59,17 +64,24 @@ class _LoginPageState extends State<LoginPage> {
 
         if (!mounted) return;
 
-        await context.read<AuthProvider>().login(a['token'], u);
+        await context.read<AuthProvider>().login(a['accessToken'], u);
 
         if (!mounted) return;
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Logado com sucesso.')));
+            .showSnackBar(const SnackBar(content: Text('Logado com sucesso.'), behavior: SnackBarBehavior.floating));
 
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, Routes.home);
       }
     } catch (e) {
-      print('EROO $e');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Erro de conexão.'), behavior: SnackBarBehavior.floating));
+      //print('EROO $e');
+    } finally {
+    setState(() {
+      _isLoading = false;
+    });
     }
   }
 
@@ -117,7 +129,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void _exibirSnackBar(String mensagem) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(mensagem)),
+      SnackBar(content: Text(mensagem), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -135,19 +147,26 @@ class _LoginPageState extends State<LoginPage> {
       },
     );
   }
+  
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      appBar: AppBar(
+    AppBar appBar = AppBar(
         title: const Text('Login'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+        scrolledUnderElevation: 0
+      );
+
+    return Scaffold(
+      //resizeToAvoidBottomInset: false,
+      appBar: appBar,
+      body: 
+      SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+          child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8),child: 
+           SizedBox(
+            height: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top - appBar.preferredSize.height,
+            child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Center(
               child: Text(
@@ -205,14 +224,24 @@ class _LoginPageState extends State<LoginPage> {
                 color: Colors.red,
                 size: 24.0,
               ),
-              label: const Text(
+              label: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.0,
+                                ),
+                              )
+                            :const Text(
                 'Entrar com a conta Google',
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
                 ),
               ),
-              onPressed: () => _signInGoogle(),
+              onPressed: _isLoading
+                            ? null
+                            :() => _signInGoogle(),
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.black,
                 backgroundColor: Colors.white,
@@ -266,7 +295,7 @@ class _LoginPageState extends State<LoginPage> {
               ],
             ),
           ],
-        ),
+        ))),
       ),
     );
   }
