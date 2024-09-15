@@ -10,8 +10,9 @@ class Usuario {
   String? senha;
   Localizacao? localizacao;
   bool verificado;
+  String? fcmToken;
 
-  Usuario(this.id, this.nome, this.email, this.senha, this.localizacao, this.verificado);
+  Usuario(this.id, this.nome, this.email, this.senha, this.localizacao, this.verificado, this.fcmToken);
   Usuario.novo(this.nome, this.email, this.senha, this.verificado);
 
   Map<String, dynamic> toMap() {
@@ -31,7 +32,8 @@ class Usuario {
       map['email'],
       map['senha'],
       map['localizacao'] == null ? map['localizacao'] : Localizacao.fromMap(map['localizacao']),
-      map['verificado']
+      map['verificado'],
+      map['fcmToken'],
     );
   }
 

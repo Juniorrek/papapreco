@@ -1,8 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:papapreco/api/firebase_api.dart';
 import 'package:papapreco/misc/auth/auth_provider.dart';
 import 'package:papapreco/misc/auth/map_provider.dart';
+import 'package:papapreco/service/navigator_service.dart';
+import 'package:papapreco/service/notification_service.dart';
 import 'package:papapreco/theme/theme.dart';
 import 'package:papapreco/view/auth/cadastro_page.dart';
 import 'package:papapreco/view/auth/codigo_verificacao_page.dart';
@@ -31,6 +34,14 @@ import 'routes/routes.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+  final InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+  );
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
   await FirebaseApi().initNotifications();
 
   runApp(
@@ -62,6 +73,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       title: 'Papa Preço',
       theme: appTheme(),
       home: Consumer<AuthProvider>(
@@ -74,7 +86,7 @@ class MyApp extends StatelessWidget {
         Routes.digitalizarNota: (context) => const DigitalizarNotaPage(),
         Routes.login: (context) => const LoginPage(),
         Routes.cadastro: (context) => const CadastroPage(),
-        Routes.esqueciSenha: (context) => EsqueciSenhaPage(),
+        Routes.esqueciSenha: (context) => const EsqueciSenhaPage(),
         Routes.alterarSenha: (context) => const AlterarSenhaPage(),
         Routes.inserirQr: (context) => const InserirQrcodePage(),
         Routes.alertasUsuario: (context) => const AlertasUsuarioPage(),

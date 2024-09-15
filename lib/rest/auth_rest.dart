@@ -1,10 +1,34 @@
 import 'dart:convert';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'package:papapreco/model/usuario.dart';
 import 'package:papapreco/rest/api.dart';
 
 class AuthRest {
+  Future<bool> atualizarFcmToken(Usuario usuario, String accessToken) async {
+    String? firebaseToken = await FirebaseMessaging.instance.getToken();
+
+    // Envie o token ao servidor
+    final http.Response response = await http.put(
+      Uri.http(API.endpoint, '${API.name}/usuarios/atualizarFcmToken'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode(<String, String>{
+        "token": firebaseToken!,
+        "idUsuario": usuario.id.toString(),
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   Future<dynamic> signIn(String email, String senha) async {
     final http.Response response = await http.post(
       Uri.http(API.endpoint, '${API.name}/auth/login'),
@@ -22,7 +46,11 @@ class AuthRest {
       await jwt_lib.storeToken(jsonDecode(response.body)['token']);
       await jwt_lib.storeUsuario(Usuario.fromMap(jsonDecode(response.body)['usuario']));*/
 
-      return jsonDecode(response.body);
+      Map m = jsonDecode(response.body);
+
+      bool r = await atualizarFcmToken(Usuario.fromMap(m["usuario"]), m["accessToken"]);
+
+      return r ? m : response.body;
     } else {
       return response.body;
     }
@@ -40,7 +68,14 @@ class AuthRest {
       }));
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+
+      Map m = jsonDecode(response.body);
+
+      bool r = await atualizarFcmToken(Usuario.fromMap(m["usuario"]), m["accessToken"]);
+
+      if (r) return m;
+      else throw Exception('Erro fazendo login via google');
+
     } else {
       throw Exception('Erro fazendo login via google.');
     }
