@@ -84,7 +84,7 @@ class MyApp extends StatelessWidget {
       routes: {
         Routes.home: (context) => const MyHomePage(title: 'Papa Preço'),
         Routes.digitalizarNota: (context) => const DigitalizarNotaPage(),
-        Routes.login: (context) => const LoginPage(),
+        //Routes.login: (context) => const LoginPage(),
         Routes.cadastro: (context) => const CadastroPage(),
         Routes.esqueciSenha: (context) => const EsqueciSenhaPage(),
         Routes.alterarSenha: (context) => const AlterarSenhaPage(),
@@ -95,6 +95,8 @@ class MyApp extends StatelessWidget {
         final Map args = settings.arguments as Map<String, Object?>;
 
         Map routes = <String, WidgetBuilder>{
+          Routes.login: (ctx) => LoginPage(
+              fromUrl: args["fromUrl"]),
           Routes.definirLocalizacao: (ctx) => DefinirLocalizacaoPage(
               latitude: args["latitude"], longitude: args["longitude"]),
           Routes.listarProdutos: (ctx) =>
@@ -122,7 +124,7 @@ class MyApp extends StatelessWidget {
           Routes.confirmarDigitalizacao: (ctx) =>
               ConfirmarDigitalizacaoPage(urlQr: args["urlQr"]),
           Routes.codigoVerificacao: (ctx) =>
-              CodigoVerificacaoPage(email: args["email"], tipo: args["tipo"]),
+              CodigoVerificacaoPage(email: args["email"], tipo: args["tipo"], senha: args["senha"], fromUrl: args["fromUrl"]),
           Routes.esqueciSenhaRedefinicao: (ctx) => EsqueciSenhaRedefinicaoPage(
               email: args["email"], codigo: args["codigo"]),
           Routes.editarDigitalizacaoPage: (ctx) => EditarDigitalizacaoPage(
@@ -265,7 +267,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: OutlinedButton(
                         onPressed: () async {
-                          Navigator.pushNamed(context, Routes.login);
+                          Navigator.pushNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": Routes.home});
                         },
                         child: const Text("Login"),
                       ),

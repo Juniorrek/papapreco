@@ -51,7 +51,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login expirado, entre novamente!'), behavior: SnackBarBehavior.floating),
       );
-      Navigator.pushNamed(context, Routes.login);
+      Navigator.pushNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": Routes.alterarSenha});
     } catch (exception) {
       showError(context, "Erro ", exception.toString());
     } finally {

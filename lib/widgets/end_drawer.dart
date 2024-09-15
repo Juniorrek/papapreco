@@ -11,6 +11,9 @@ class EndDrawer extends StatelessWidget {
     final isLoggedIn = context.watch<AuthProvider>().isLoggedIn;
     final usuario = context.watch<AuthProvider>().usuario;
 
+
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+
     return Drawer(
       child: Column(
         children: [
@@ -68,7 +71,7 @@ class EndDrawer extends StatelessWidget {
               leading: const Icon(Icons.login),
               title: const Text('Login'),
               onTap: () {
-                Navigator.pushReplacementNamed(context, Routes.login);
+                Navigator.pushReplacementNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": currentRoute!});
               },
             ),
             const Spacer(),
@@ -82,7 +85,8 @@ class EndDrawer extends StatelessWidget {
               onTap: () {
                 context.read<AuthProvider>().logout();
                 //Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, Routes.login);
+                //Navigator.pushReplacementNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": Routes.home});
+                Navigator.pushReplacementNamed(context, Routes.home);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Sucesso!'), behavior: SnackBarBehavior.floating),
                 );

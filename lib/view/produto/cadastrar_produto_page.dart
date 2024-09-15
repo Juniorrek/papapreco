@@ -90,12 +90,12 @@ class _CadastrarProdutoPageState extends State<CadastrarProdutoPage> {
       novoProduto = await _repository.inserir(novoProduto, token);
 
       if (!mounted) return;
-      Navigator.pop(context);
+      Navigator.pop(context, novoProduto.nome);
     } on UnauthorizedException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login expirado, entre novamente!'), behavior: SnackBarBehavior.floating),
       );
-      Navigator.pushNamed(context, Routes.login);
+      Navigator.pushNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": Routes.cadastrarProduto});
     } catch (exception) {
       showError(context, "Erro inserindo produto", exception.toString());
     } finally {

@@ -80,7 +80,7 @@ class _AlertasUsuarioPageState extends State<AlertasUsuarioPage> {
             content: Text('Login expirado, entre novamente!'),
             behavior: SnackBarBehavior.floating),
       );
-      Navigator.pushNamed(context, Routes.login);
+      Navigator.pushNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": Routes.alertasUsuario});
     } catch (exception) {
       showError(
           context, "Erro obtendo lista de notificações", exception.toString());
@@ -149,7 +149,7 @@ class _AlertasUsuarioPageState extends State<AlertasUsuarioPage> {
             content: Text('Login expirado, entre novamente!'),
             behavior: SnackBarBehavior.floating),
       );
-      Navigator.pushNamed(context, Routes.login);
+      Navigator.pushNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": Routes.alertasUsuario});
     } catch (exception) {
       showError(context, "Erro inserindo produto", exception.toString());
     }/* finally {
@@ -187,7 +187,7 @@ class _AlertasUsuarioPageState extends State<AlertasUsuarioPage> {
             content: Text('Login expirado, entre novamente!'),
             behavior: SnackBarBehavior.floating),
       );
-      Navigator.pushNamed(context, Routes.login);
+      Navigator.pushNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": Routes.alertasUsuario});
     } catch (exception) {
       showError(context, "Erro excluindo alerta", exception.toString());
     }/* finally {
@@ -228,7 +228,7 @@ class _AlertasUsuarioPageState extends State<AlertasUsuarioPage> {
             content: Text('Login expirado, entre novamente!'),
             behavior: SnackBarBehavior.floating),
       );
-      Navigator.pushNamed(context, Routes.login);
+      Navigator.pushNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": Routes.alertasUsuario});
     } catch (exception) {
       showError(context, "Erro atualizando localizacao", exception.toString());
     } finally {

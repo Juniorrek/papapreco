@@ -175,7 +175,7 @@ class _ConfirmarDigitalizacaoPageState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login expirado, entre novamente!'), behavior: SnackBarBehavior.floating),
       );
-      Navigator.pushNamed(context, Routes.login);
+      Navigator.pushNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": Routes.confirmarDigitalizacao});
     } catch (exception) {
       showError(context, "Erro inserindo produto", exception.toString());
     } finally {

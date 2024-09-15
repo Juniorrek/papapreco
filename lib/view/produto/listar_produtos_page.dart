@@ -266,13 +266,19 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                         const SnackBar(
                             content: Text('Você precisa estar logado.'), behavior: SnackBarBehavior.floating));
                   } else {
-                    await Navigator.pushNamed(context, Routes.cadastrarProduto,
+                    final result = await Navigator.pushNamed(context, Routes.cadastrarProduto,
                         arguments: <String, Object>{
                           "latitude": mapProvider.latitude,
                           "longitude": mapProvider.longitude,
                           "localizacaoString": mapProvider.localizacaoString,
                         });
                     if (!context.mounted) return;
+
+                    if (result != null) {
+                      setState(() {
+                        _palavraController.text = result as String;
+                      });
+                    }
                     _refreshList(mapProvider.latitude, mapProvider.longitude,
                         mapProvider.distancia);
                   }

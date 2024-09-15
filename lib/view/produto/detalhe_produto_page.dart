@@ -133,7 +133,7 @@ class _DetalheProdutoPageState extends State<DetalheProdutoPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login expirado, entre novamente!'), behavior: SnackBarBehavior.floating),
       );
-      Navigator.pushNamed(context, Routes.login);
+      Navigator.pushNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": Routes.detalheProduto});
     } catch (exception) {
       if (mounted) {
         Navigator.of(context).pop();

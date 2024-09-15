@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:papapreco/helper/error.dart';
 import 'package:papapreco/model/usuario.dart';
 import 'package:papapreco/rest/auth_rest.dart';
+import 'package:papapreco/routes/routes.dart';
 import 'package:papapreco/widgets/auth/senha_e_confirmacao_widget.dart';
 
 class CadastroPage extends StatefulWidget {
@@ -33,10 +34,31 @@ class _CadastroPageState extends State<CadastroPage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Sucesso!'), behavior: SnackBarBehavior.floating));
+      /*ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Sucesso! Verifique seu email.'), behavior: SnackBarBehavior.floating));*/
 
-      Navigator.pop(context);
+      //Navigator.pop(context);
+      bool enviado = await _authRest.enviarCodigoVerificacao(
+          novoUsuario.email, "VERIFICAR_EMAIL");
+      if (enviado) {
+        Navigator.pushNamed(
+          context,
+          Routes.codigoVerificacao,
+          arguments: <String, Object>{
+            "email": novoUsuario.email,
+            "tipo": "VERIFICAR_EMAIL",
+            "senha": _senha,
+            "fromUrl": Routes.home
+          },
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Erro ao enviar código de verificação de email!'),
+              behavior: SnackBarBehavior.floating),
+        );
+      }
+      
     } catch (exception) {
       showError(context, "Erro no cadastro", exception.toString());
     } finally {

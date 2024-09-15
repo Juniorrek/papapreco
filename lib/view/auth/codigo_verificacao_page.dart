@@ -3,14 +3,18 @@ import 'package:papapreco/helper/error.dart';
 import 'package:papapreco/rest/auth_rest.dart';
 import 'package:papapreco/routes/routes.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
-import 'dart:async'; // Importar para usar o Timer
+import 'dart:async';
+
+import 'package:papapreco/util/login_util.dart'; // Importar para usar o Timer
 
 class CodigoVerificacaoPage extends StatefulWidget {
   final String email;
   final String tipo;
+  final String? senha;
+  final String? fromUrl;
 
   const CodigoVerificacaoPage(
-      {super.key, required this.email, required this.tipo});
+      {super.key, required this.email, required this.tipo, this.senha, this.fromUrl});
 
   static const String routeName = '/codigo_verificacao';
 
@@ -50,9 +54,13 @@ class _CodigoVerificacaoPageState extends State<CodigoVerificacaoPage> {
       if (retorno == 'OK') {
         if (widget.tipo == "VERIFICAR_EMAIL") {
           await _authRest.verificarEmail(widget.email, codigo);
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Email verificado com sucesso!"), behavior: SnackBarBehavior.floating));
-          Navigator.pushNamed(context, Routes.login);
+          /*ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Email verificado com sucesso!"), behavior: SnackBarBehavior.floating));*/
+          
+          //Navigator.pushNamed(context, Routes.login);
+
+
+          LoginUtil.logar(context, widget.email, widget.senha!, widget.fromUrl!);
         } else if (widget.tipo == "REDEFINIR_SENHA") {
           Navigator.pushNamed(context, Routes.esqueciSenhaRedefinicao,
               arguments: <String, Object>{
