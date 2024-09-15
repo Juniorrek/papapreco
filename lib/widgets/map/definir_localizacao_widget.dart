@@ -110,9 +110,15 @@ class _DefinirLocaliacaoWidgetState extends State<DefinirLocalizacaoWidget> {
 
   Widget _text() {
     if (!_isLoading) {
+      String text;
+      if (widget.localizacaoString != null) {
+        text = widget.localizacaoString! + (widget.distancia != null ? ' (${widget.distancia?.toInt().toString()}km)' : '');
+      } else {
+        text = 'Selecione uma localizacao';
+      }
+
       return Flexible(
-      child:Text(widget.localizacaoString ?? 'Selecione uma localizacao' +
-                (widget.distancia != null ? ' (${widget.distancia?.toInt().toString()}km)' : ''),
+      child:Text(text,
                 style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.normal)),
                 );
     } else {
