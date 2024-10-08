@@ -300,7 +300,8 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                         child: TextFormField(
                           decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              labelText: 'Produto:'),
+                              labelText: 'Produto:',
+                              counterText: ''),
                           controller: _palavraController,
                           validator: (value) {
                             if (value!.isEmpty) {
@@ -308,6 +309,7 @@ class _ListarProdutosPageState extends State<ListarProdutosPage> {
                             }
                             return null;
                           },
+                          maxLength: 256,
                         )),
                     Consumer<MapProvider>(
                       builder: (context, mapProvider, child) {

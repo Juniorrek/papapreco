@@ -20,7 +20,8 @@ class EndDrawer extends StatelessWidget {
           if (isLoggedIn && usuario != null)
             DrawerHeader(
               decoration: const BoxDecoration(
-                color: Colors.blue,
+                //color: Colors.blue,
+                color: const Color(0xFFFFC531)
               ),
               child: Row(
                 children: [
@@ -30,12 +31,12 @@ class EndDrawer extends StatelessWidget {
                       children: [
                         Text(
                           usuario.nome,
-                          style: const TextStyle(color: Colors.white, fontSize: 24),
+                          style: const TextStyle(color: Colors.black, fontSize: 24),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           usuario.email,
-                          style: const TextStyle(color: Colors.white70, fontSize: 16),
+                          style: const TextStyle(color: Colors.black54, fontSize: 16),
                         ),
                       ],
                     ),
@@ -71,7 +72,7 @@ class EndDrawer extends StatelessWidget {
               leading: const Icon(Icons.login),
               title: const Text('Login'),
               onTap: () {
-                Navigator.pushReplacementNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": currentRoute!});
+                Navigator.pushReplacementNamed(context, Routes.login, arguments: <String, Object>{"fromUrl": currentRoute ?? "/home"});
               },
             ),
             const Spacer(),

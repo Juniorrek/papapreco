@@ -118,7 +118,8 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                                         fontWeight: FontWeight.bold)),
                                 TextFormField(
                                   decoration: const InputDecoration(
-                                      border: OutlineInputBorder()),
+                                      border: OutlineInputBorder(),
+                                      counterText: ''),
                                   controller: _palavraController,
                                   validator: (value) {
                                     if (value!.isEmpty) {
@@ -126,6 +127,7 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                                     }
                                     return null;
                                   },
+                                  maxLength: 256,
                                 )
                               ],
                             )),
@@ -181,8 +183,9 @@ class _FiltrarProdutosPageState extends State<FiltrarProdutosPage> {
                               ),
                               child: Slider(
                                 value: _currentSliderDistanciaValue,
+                                min: 5,
                                 max: 50,
-                                divisions: 10,
+                                divisions: 9,
                                 label:
                                     '${_currentSliderDistanciaValue.round()} km',
                                 onChanged: (double value) {

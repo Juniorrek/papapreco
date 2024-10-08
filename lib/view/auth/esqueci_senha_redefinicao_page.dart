@@ -32,7 +32,8 @@ class _EsqueciSenhaRedefinicaoPageState
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text("Sucesso!"), behavior: SnackBarBehavior.floating));
             
-        Navigator.popUntil(context, ModalRoute.withName(Routes.login));
+        //Navigator.popUntil(context, ModalRoute.withName(Routes.login));
+        Navigator.pushReplacementNamed(context, Routes.home);
       } else {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(retorno), behavior: SnackBarBehavior.floating));

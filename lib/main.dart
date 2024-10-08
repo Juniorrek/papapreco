@@ -166,8 +166,8 @@ class _MyHomePageState extends State<MyHomePage> {
         mapProvider.localizacaoString != '') {
       final Map result = await Navigator.pushNamed(
               context, Routes.listarProdutos,
-              arguments: <String, Object>{"palavra": _palavraController.text})
-          as Map<String, Object>;
+              arguments: <String, Object?>{"palavra": _palavraController.text})
+          as Map<String, Object?>;
 
       if (!context.mounted) return;
 
@@ -220,7 +220,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             horizontal: 8, vertical: 8),
                         child: TextFormField(
                           decoration: const InputDecoration(
-                              border: OutlineInputBorder()),
+                              border: OutlineInputBorder(),
+                              counterText: ''), 
                           controller: _palavraController,
                           validator: (value) {
                             if (value!.isEmpty) {
@@ -228,6 +229,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             }
                             return null;
                           },
+                          maxLength: 256,
                         ),
                       ),
                       Consumer<MapProvider>(
