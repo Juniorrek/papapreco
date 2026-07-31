@@ -63,3 +63,27 @@ cd papapreco
 flutter pub get
 flutter run
 ```
+
+---
+
+## 🧭 Maintenance / Next Steps
+
+The Android toolchain was bumped (2026-07) to Gradle 8.14 / AGP 8.11.1 / Kotlin 2.2.20 so the
+project builds against current Flutter SDKs. A few follow-ups to keep in mind:
+
+- **Migrate to Flutter's Built-in Kotlin.** `flutter run`/`flutter build` currently warn that
+  applying the Kotlin Gradle Plugin directly (as `android/app/build.gradle` and the
+  `mobile_scanner` plugin do) will stop working in a future Flutter release. We can't finish this
+  migration until `mobile_scanner` (and any other plugin that still applies KGP itself) ships a
+  version that supports Built-in Kotlin — check its changelog before attempting. See the
+  [migration guide](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers).
+- **Keep an eye on `flutter_compass`.** It's a transitive dependency (via
+  `flutter_map_location_marker` → `location_picker_flutter_map`) and is lightly maintained. If the
+  location-picker/compass features start breaking, check whether a newer release exists or whether
+  it needs to be swapped for an alternative.
+- **Several direct dependencies have pending major upgrades** (`firebase_core`,
+  `firebase_messaging`, `flutter_local_notifications`, `geolocator`, `google_sign_in`,
+  `flutter_map`, `location_picker_flutter_map`, `mobile_scanner` 7.x). Run
+  `flutter pub outdated` to see the current gaps — these were intentionally left on their locked
+  minor/patch versions for now since major bumps usually carry breaking API changes that need
+  dedicated testing.
