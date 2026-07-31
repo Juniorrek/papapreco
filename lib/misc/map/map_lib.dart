@@ -9,9 +9,18 @@ double defaultLatitude = -25.441105;
 double defaultLongitude = -49.276855;
 double defaultZoom = 18;
 
+// Nominatim exige um User-Agent identificando a aplicação, senão retorna
+// "Access denied" em texto puro em vez de JSON.
+// https://operations.osmfoundation.org/policies/nominatim/
+const Map<String, String> _nominatimHeaders = {
+  'User-Agent': 'PapaPreco/1.0 (br.com.papapreco)',
+};
+
 Future<dynamic> geocoding(String query) async {
-  final http.Response response = await http.get(Uri.parse(
-      'https://nominatim.openstreetmap.org/search?format=json&q=$query'));
+  final http.Response response = await http.get(
+      Uri.parse(
+          'https://nominatim.openstreetmap.org/search?format=json&q=$query'),
+      headers: _nominatimHeaders);
 
   if (Configs.status == StatusConfig.cel) {
     print(response.request?.url.toString());
@@ -23,8 +32,10 @@ Future<dynamic> geocoding(String query) async {
 }
 
 Future<dynamic> reverseGeocoding(double latitude, double longitude) async {
-  final http.Response response = await http.get(Uri.parse(
-      'https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude'));
+  final http.Response response = await http.get(
+      Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude'),
+      headers: _nominatimHeaders);
 
   var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes));
 
