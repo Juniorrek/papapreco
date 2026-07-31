@@ -17,7 +17,7 @@ ThemeData appTheme() {
         backgroundColor: Colors.white, // Define a cor de fundo do AppBar
         foregroundColor: Colors.black, // Define a cor do texto e ícones no AppBar
       ),
-      bottomAppBarTheme: const BottomAppBarTheme(
+      bottomAppBarTheme: const BottomAppBarThemeData(
         color: Colors.white, // Define a cor de fundo do BottomAppBar
       ),
     elevatedButtonTheme: ElevatedButtonThemeData(
