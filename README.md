@@ -66,6 +66,13 @@ flutter run
 
 ---
 
+## 🗺️ Roadmap
+
+The engineering roadmap — infrastructure, testing strategy, and the reasoning
+behind each decision — is tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
+
+---
+
 ## 🧭 Maintenance / Next Steps
 
 The Android toolchain was bumped (2026-07) to Gradle 8.14 / AGP 8.11.1 / Kotlin 2.2.20 so the
