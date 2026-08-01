@@ -36,6 +36,26 @@ Blockers. Nothing downstream can start until these are done.
   on an empty suite.
   *Why:* a red test suite is strictly worse than no test suite.
 
+- [x] **Rotate the API's committed credentials and externalize its config** — ~3h
+  Not in the original plan; found while starting the Docker work. Three live
+  secrets were committed to `papaprecoapi`, which is a public repository: the
+  Gmail app password in `application.yaml`, the RSA private key signing every
+  JWT, and a `firebase-adminsdk` **service account** key — a server-side admin
+  credential for the whole Firebase project, which is a different thing from
+  the `google-services.json` client config discussed in Phase 4. All three were
+  rotated and the old ones revoked at the provider, then moved to a gitignored
+  `secrets/` directory and read through `${...}` placeholders; `.env.example`
+  documents the variable list. `SecurityConfig` was reading its keys via
+  `@Value("jwt.rsa.pub")` with no `${}`, so the JWT properties in
+  `application.yaml` were dead config and no override could have worked. Log
+  levels dropped from `TRACE` to `INFO` defaults — `BasicBinder: TRACE` prints
+  bound SQL parameters, meaning password hashes and verification codes.
+  *Why:* rotation is the only real fix once a secret is pushed, and the roadmap
+  already ruled history rewriting out of scope. Nothing could be deployed
+  before this: an image built from the old tree would have baked the keys into
+  a layer, and there was no way to supply a different database or mail account
+  per environment.
+
 - [ ] **Dockerize the API** — ~3h
   Multi-stage build, slim JRE base, non-root user, `HEALTHCHECK` instruction.
   *Why:* prerequisite for ECR/Fargate, and it makes the build reproducible.
