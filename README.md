@@ -64,6 +64,27 @@ flutter pub get
 flutter run
 ```
 
+### Configuration
+
+The app has no environment settings committed to source. Everything environment-specific
+is passed at build time with `--dart-define`:
+
+| Define | Default | Purpose |
+|---|---|---|
+| `API_BASE_URL` | `http://10.0.2.2:8080/papaprecoapi` | Base URL of the backend, **including the scheme and the API's context path**. The default is the Android emulator's alias for the host machine, so a bare `flutter run` targets a locally running API. |
+| `DEV_QRCODE_URL` | *(empty)* | Optional NFC-e URL used to pre-fill the "insert QR code" field during development, so you don't have to scan a real receipt on every run. Empty means no pre-fill. |
+
+```bash
+# Physical device on the same LAN as the API (use your machine's LAN address)
+flutter run --dart-define=API_BASE_URL=http://192.168.0.10:8080/papaprecoapi
+
+# Deployed environment
+flutter build apk --dart-define=API_BASE_URL=https://api.example.com
+```
+
+Because these are compile-time constants, changing one requires a rebuild — a hot
+restart will not pick it up.
+
 ---
 
 ## 🗺️ Roadmap

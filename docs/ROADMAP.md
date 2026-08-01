@@ -16,16 +16,24 @@ unknowns need slack) → predictable work → presentation last.
 
 Blockers. Nothing downstream can start until these are done.
 
-- [ ] **Externalize API configuration** — ~2h
-  Replace the `Configs.status` enum and hardcoded LAN IPs in `lib/rest/api.dart`
-  with `--dart-define=API_URL=...`, resolved per build flavor.
+- [x] **Externalize API configuration** — ~2h
+  Replaced the `Configs.status` enum and hardcoded LAN IPs in `lib/rest/api.dart`
+  with a single `--dart-define=API_BASE_URL=...`, which carries the scheme and
+  the API's context path so pointing at an HTTPS deployment is a build argument
+  rather than a code change. `API.uri(path, [query])` is now the only way call
+  sites build a URL. The `pc`/`cel` branches went away with the enum: the QR
+  pre-fill became `--dart-define=DEV_QRCODE_URL`, and `MapProvider` now falls
+  back to the default coordinates whenever geolocation is unavailable instead of
+  asking which machine it is running on.
   *Why:* a home-network IP committed to source control is the least defensible
   file in the repository, and no deploy is possible while the base URL is fixed
   at compile time.
 
-- [ ] **Delete or rewrite `test/widget_test.dart`** — ~15min
-  The file still contains the Flutter counter template and asserts on widgets
-  that do not exist. `flutter test` fails today.
+- [x] **Delete or rewrite `test/widget_test.dart`** — ~15min
+  The file contained the Flutter counter template and asserted on widgets that
+  did not exist. Deleted, and replaced with `test/rest/api_test.dart` covering
+  URL resolution and query/path escaping — `flutter test` would otherwise fail
+  on an empty suite.
   *Why:* a red test suite is strictly worse than no test suite.
 
 - [ ] **Dockerize the API** — ~3h
