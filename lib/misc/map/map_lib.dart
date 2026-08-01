@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'package:papapreco/util/configs.dart';
 
 double defaultLatitude = -25.441105;
 double defaultLongitude = -49.276855;
@@ -22,8 +22,8 @@ Future<dynamic> geocoding(String query) async {
           'https://nominatim.openstreetmap.org/search?format=json&q=$query'),
       headers: _nominatimHeaders);
 
-  if (Configs.status == StatusConfig.cel) {
-    print(response.request?.url.toString());
+  if (kDebugMode) {
+    debugPrint(response.request?.url.toString());
   }
 
   var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes));

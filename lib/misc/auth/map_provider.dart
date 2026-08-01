@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
-import 'package:papapreco/util/configs.dart';
 
 class MapProvider with ChangeNotifier {
   double _latitude = map_lib.defaultLatitude;
@@ -35,31 +34,25 @@ class MapProvider with ChangeNotifier {
   }
 
   Future<void> setCurrentPosition() async {
-    if (Configs.status == StatusConfig.pc) {
-      setLatitude(map_lib.defaultLatitude);
-      setLongitude(map_lib.defaultLongitude);
+    Position? p;
 
-      String reverseGeocodingString = await map_lib.reverseGeocodingString(
-          map_lib.defaultLatitude, map_lib.defaultLongitude);
-      setLocalizacaoString(reverseGeocodingString);
-    } else {
-      Position? p = await map_lib.currentLocation();
-
-      if (p != null) {
-        setLatitude(p.latitude);
-        setLongitude(p.longitude);
-
-        String reverseGeocodingString =
-            await map_lib.reverseGeocodingString(latitude, longitude);
-        setLocalizacaoString(reverseGeocodingString);
-      } else {
-        setLatitude(map_lib.defaultLatitude);
-        setLongitude(map_lib.defaultLongitude);
-
-        String reverseGeocodingString = await map_lib.reverseGeocodingString(
-            map_lib.defaultLatitude, map_lib.defaultLongitude);
-        setLocalizacaoString(reverseGeocodingString);
-      }
+    try {
+      p = await map_lib.currentLocation();
+    } catch (_) {
+      // No GPS available — desktop, emulator, or a denied permission. In those
+      // cases currentLocation() completes with an error, and since main.dart
+      // calls this method without awaiting it, that surfaces as an unhandled
+      // async error.
+      p = null;
     }
+
+    final double latitude = p?.latitude ?? map_lib.defaultLatitude;
+    final double longitude = p?.longitude ?? map_lib.defaultLongitude;
+
+    setLatitude(latitude);
+    setLongitude(longitude);
+
+    setLocalizacaoString(
+        await map_lib.reverseGeocodingString(latitude, longitude));
   }
 }

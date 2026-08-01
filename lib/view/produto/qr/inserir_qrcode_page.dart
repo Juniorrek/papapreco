@@ -9,7 +9,6 @@ import 'package:papapreco/model/localizacao.dart';
 import 'package:papapreco/model/produto.dart';
 import 'package:papapreco/repositories/produto_repository.dart';
 import 'package:papapreco/routes/routes.dart';
-import 'package:papapreco/util/configs.dart';
 import 'package:papapreco/view/produto/filtrar_produtos_page.dart';
 import 'package:papapreco/widgets/map/definir_localizacao_widget.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +25,16 @@ class InserirQrcodePage extends StatefulWidget {
 }
 
 class _CadastrarProdutoPageState extends State<InserirQrcodePage> {
+  /// NFC-e URL used to pre-fill the field during development, to avoid having
+  /// to scan a real QR code on every run:
+  ///
+  /// ```
+  /// flutter run --dart-define=DEV_QRCODE_URL=https://www.fazenda.pr.gov.br/nfce/qrcode?p=...
+  /// ```
+  ///
+  /// Empty by default, so the normal behaviour is to pre-fill nothing.
+  static const String _devQrcodeUrl = String.fromEnvironment('DEV_QRCODE_URL');
+
   final _formKey = GlobalKey<FormState>();
   final _qrCodeController = TextEditingController();
 
@@ -33,8 +42,8 @@ class _CadastrarProdutoPageState extends State<InserirQrcodePage> {
   void initState() {
     super.initState();
 
-    if (Configs.status == StatusConfig.pc || Configs.status == StatusConfig.cel) {
-       _qrCodeController.text = "https://www.fazenda.pr.gov.br/nfce/qrcode?p=41240778116670001994650110000706859008861151|2|1|19|191.37|36424547706431514c323277326e5933526a4272497a356d31746b3d|1|1E71BE91A8A04C4D104650E2FB2AB5B14CDB91E8";
+    if (_devQrcodeUrl.isNotEmpty) {
+      _qrCodeController.text = _devQrcodeUrl;
     }
   }
 
