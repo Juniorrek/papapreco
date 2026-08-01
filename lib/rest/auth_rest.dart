@@ -11,7 +11,7 @@ class AuthRest {
 
     // Envie o token ao servidor
     final http.Response response = await http.put(
-      Uri.http(API.endpoint, '${API.name}/usuarios/atualizarFcmToken'),
+      API.uri('usuarios/atualizarFcmToken'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $accessToken',
@@ -31,7 +31,7 @@ class AuthRest {
 
   Future<dynamic> signIn(String email, String senha) async {
     final http.Response response = await http.post(
-      Uri.http(API.endpoint, '${API.name}/auth/login'),
+      API.uri('auth/login'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -59,7 +59,7 @@ class AuthRest {
 
   Future<Map> signInGoogle(String idToken, String accessToken) async {
     final http.Response response = await http.post(
-      Uri.http(API.endpoint, '${API.name}/auth/login/google'),
+      API.uri('auth/login/google'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -83,7 +83,7 @@ class AuthRest {
 
   Future<Usuario> signUp(Usuario usuario) async {
     final http.Response response = await http.post(
-      Uri.http(API.endpoint, '${API.name}/auth/signup'),
+      API.uri('auth/signup'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -98,7 +98,7 @@ class AuthRest {
 
   Future<String> recuperarSenhaGerarToken(String email) async {
     final http.Response response =
-        await http.post(Uri.parse('http://${API.endpoint}/${API.name}/auth/redefinirSenha/gerarToken?email=$email'));
+        await http.post(API.uri('auth/redefinirSenha/gerarToken', {'email': email}));
 
     if (response.statusCode == 200) {
       return "OK";
@@ -109,7 +109,7 @@ class AuthRest {
 
   Future<String> validarCodigoVerificacao(String email, String codigo) async {
     final http.Response response =
-        await http.get(Uri.parse('http://${API.endpoint}/${API.name}/auth/validarCodigoVerificacao?email=$email&codigo=$codigo'));
+        await http.get(API.uri('auth/validarCodigoVerificacao', {'email': email, 'codigo': codigo}));
 
     if (response.statusCode == 200) {
       return "OK";
@@ -120,7 +120,7 @@ class AuthRest {
 
   Future<String> verificarEmail(String email, String codigo) async {
     final http.Response response =
-        await http.get(Uri.parse('http://${API.endpoint}/${API.name}/auth/verificarEmail?email=$email&codigo=$codigo'));
+        await http.get(API.uri('auth/verificarEmail', {'email': email, 'codigo': codigo}));
 
     if (response.statusCode == 200) {
       return "OK";
@@ -131,7 +131,7 @@ class AuthRest {
 
   Future<bool> enviarCodigoVerificacao(String email, String tipo) async {
     final http.Response response =
-        await http.get(Uri.parse('http://${API.endpoint}/${API.name}/auth/enviarCodigoVerificacao?email=$email&tipo=$tipo'));
+        await http.get(API.uri('auth/enviarCodigoVerificacao', {'email': email, 'tipo': tipo}));
 
     if (response.statusCode == 200) {
       return true;
@@ -142,7 +142,7 @@ class AuthRest {
 
   Future<String> redefinirSenha(String email, String codigo, String novaSenha) async {
     final http.Response response =
-        await http.post(Uri.parse('http://${API.endpoint}/${API.name}/auth/redefinirSenha'),
+        await http.post(API.uri('auth/redefinirSenha'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

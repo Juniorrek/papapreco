@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -10,12 +11,10 @@ import 'package:papapreco/model/produto.dart';
 import 'package:papapreco/model/usuario.dart';
 import 'package:papapreco/rest/api.dart';
 import 'package:papapreco/misc/map/map_lib.dart' as map_lib;
-import 'package:papapreco/util/configs.dart';
 
 class ProdutoRest {
   Future<Produto> buscarPorId(int id) async {
-    final http.Response response = await http
-        .get(Uri.parse("http://${API.endpoint}/${API.name}/produtos/$id"));
+    final http.Response response = await http.get(API.uri('produtos/$id'));
 
     if (response.statusCode == 200) {
       Produto p = Produto.fromJson(response.body);
@@ -29,7 +28,7 @@ class ProdutoRest {
 
   Future<List<Produto>> buscarPorNome(String nome) async {
     final http.Response response =
-        await http.get(Uri.http(API.endpoint, "produtos/nome/$nome"));
+        await http.get(API.uri('produtos/nome/$nome'));
 
     if (response.statusCode == 200) {
       List<Produto> produtos = Produto.fromJsonList(response.body);
@@ -48,8 +47,14 @@ class ProdutoRest {
 
   Future<List<Produto>> filtrar(String nome, double latitude, double longitude,
       double distancia, double precoMin, double precoMax) async {
-    final http.Response response = await http.get(Uri.parse(
-        "http://${API.endpoint}/produtos/filtrar?nome=$nome&latitude=$latitude&longitude=$longitude&distancia=$distancia&precoMin=$precoMin&precoMax=$precoMax"));
+    final http.Response response = await http.get(API.uri('produtos/filtrar', {
+      'nome': nome,
+      'latitude': latitude,
+      'longitude': longitude,
+      'distancia': distancia,
+      'precoMin': precoMin,
+      'precoMax': precoMax,
+    }));
 
     if (response.statusCode == 200) {
       List<Produto> produtos = Produto.fromJsonList(response.body);
@@ -67,8 +72,14 @@ class ProdutoRest {
       double distancia,
       Decimal precoMin,
       Decimal precoMax) async {
-    final http.Response response = await http.get(Uri.parse(
-        "http://${API.endpoint}/${API.name}/produtos/ranking?palavra=$palavra&latitude=$latitude&longitude=$longitude&distancia=$distancia&precoMin=$precoMin&precoMax=$precoMax"));
+    final http.Response response = await http.get(API.uri('produtos/ranking', {
+      'palavra': palavra,
+      'latitude': latitude,
+      'longitude': longitude,
+      'distancia': distancia,
+      'precoMin': precoMin,
+      'precoMax': precoMax,
+    }));
 
     if (response.statusCode == 200) {
       List<Produto> produtos = Produto.fromJsonList(response.body);
@@ -81,8 +92,11 @@ class ProdutoRest {
 
   Future<List<Produto>> historico(
       String nome, double latitude, double longitude) async {
-    final http.Response response = await http.get(Uri.parse(
-        "http://${API.endpoint}/${API.name}/produtos/historico?nome=$nome&latitude=$latitude&longitude=$longitude"));
+    final http.Response response = await http.get(API.uri('produtos/historico', {
+      'nome': nome,
+      'latitude': latitude,
+      'longitude': longitude,
+    }));
 
     if (response.statusCode == 200) {
       List<Produto> produtos = Produto.fromJsonList(response.body);
@@ -97,8 +111,8 @@ class ProdutoRest {
       String urlQr, Usuario u) async {
     final http.Response response = await http.get(Uri.parse(urlQr));
 
-    if (Configs.status == StatusConfig.cel) {
-      print(response.request?.url.toString());
+    if (kDebugMode) {
+      debugPrint(response.request?.url.toString());
     }
 
     if (response.statusCode == 200) {
@@ -238,7 +252,7 @@ class ProdutoRest {
 
   Future<Produto> inserir(Produto produto, String token) async {
     final http.Response response = await http.post(
-      Uri.parse("http://${API.endpoint}/${API.name}/produtos"),
+      API.uri('produtos'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -256,7 +270,7 @@ class ProdutoRest {
 
   Future<void> inserirLista(List<Produto> produtos, String token) async {
     final http.Response response = await http.post(
-      Uri.parse("http://${API.endpoint}/${API.name}/produtos/lista"),
+      API.uri('produtos/lista'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',

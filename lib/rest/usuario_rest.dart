@@ -9,7 +9,7 @@ import 'package:papapreco/rest/api.dart';
 class UsuarioRest {
   Future<Usuario> alterarSenha(Usuario usuario, String senhaAtual, String token) async {
     final http.Response response = await http.put(
-      Uri.http(API.endpoint, '${API.name}/usuarios/alterarSenha'),
+      API.uri('usuarios/alterarSenha'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -31,7 +31,7 @@ class UsuarioRest {
 
   Future<Usuario> alterarLocalizacaoAlertas(Usuario usuario, String token) async {
     final http.Response response = await http.put(
-      Uri.http(API.endpoint, '${API.name}/usuarios/alterarLocalizacaoAlertas'),
+      API.uri('usuarios/alterarLocalizacaoAlertas'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',

@@ -8,7 +8,7 @@ import 'package:papapreco/rest/api.dart';
 class VotoUsuarioProdutoRest {
   Future<VotoUsuarioProduto> buscarPorId(int id) async {
     final http.Response response =
-        await http.get(Uri.http(API.endpoint, "voto/$id"));
+        await http.get(API.uri('voto/$id'));
 
     if (response.statusCode == 200) {
       VotoUsuarioProduto v = VotoUsuarioProduto.fromJson(response.body);
@@ -20,7 +20,7 @@ class VotoUsuarioProdutoRest {
 
   Future<VotoUsuarioProduto> votar(int produtoId, int usuarioId, bool voto, String accessToken) async {
     final http.Response response = await http.post(
-      Uri.parse("http://${API.endpoint}/${API.name}/votar"),
+      API.uri('votar'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $accessToken',
@@ -42,7 +42,7 @@ class VotoUsuarioProdutoRest {
 
   Future<VotoUsuarioProduto> mudarVoto(int produtoId, int usuarioId, bool novoVoto, String accessToken) async {
     final http.Response response = await http.put(
-      Uri.parse("http://${API.endpoint}/${API.name}/voto/$usuarioId/$produtoId?novoVoto=$novoVoto"),
+      API.uri('voto/$usuarioId/$produtoId', {'novoVoto': novoVoto}),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $accessToken',
@@ -59,7 +59,7 @@ class VotoUsuarioProdutoRest {
 
   Future<void> cancelarVoto(int produtoId, int usuarioId, String accessToken) async {
     final http.Response response = await http.delete(
-      Uri.parse("http://${API.endpoint}/${API.name}/voto/$usuarioId/$produtoId"),
+      API.uri('voto/$usuarioId/$produtoId'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $accessToken',

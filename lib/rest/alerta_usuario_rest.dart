@@ -6,7 +6,7 @@ import 'package:papapreco/rest/api.dart';
 class AlertaUsuarioRest {
   Future<List<AlertaUsuario>> buscarPorUsuario(int usuarioId, String token) async {
     final http.Response response =
-        await http.get(Uri.http(API.endpoint, '${API.name}/alertas/usuario/$usuarioId'),
+        await http.get(API.uri('alertas/usuario/$usuarioId'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token',
@@ -24,7 +24,7 @@ class AlertaUsuarioRest {
 
   Future<AlertaUsuario> inserir(AlertaUsuario alerta, String token) async {
     final http.Response response =
-        await http.post(Uri.http(API.endpoint, '${API.name}/alertas'),
+        await http.post(API.uri('alertas'),
             headers: <String, String>{
               'Content-Type': 'application/json; charset=UTF-8',
               'Authorization': 'Bearer $token',
@@ -42,7 +42,7 @@ class AlertaUsuarioRest {
 
   Future<AlertaUsuario> alterar(AlertaUsuario alerta, String token) async {
     final http.Response response = await http.put(
-      Uri.http(API.endpoint, '${API.name}/alertas/${alerta.id}'),
+      API.uri('alertas/${alerta.id}'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization': 'Bearer $token',
@@ -60,7 +60,7 @@ class AlertaUsuarioRest {
 
   Future<AlertaUsuario> remover(int id, String token) async {
     final http.Response response = await http
-        .delete(Uri.http(API.endpoint, '${API.name}/alertas/$id'),
+        .delete(API.uri('alertas/$id'),
       headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
       'Authorization': 'Bearer $token',
