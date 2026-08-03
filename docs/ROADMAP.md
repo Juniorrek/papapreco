@@ -58,8 +58,8 @@ Blockers. Nothing downstream can start until these are done.
 
 - [ ] **Dockerize the API** — ~3h
   Multi-stage build, slim JRE base, non-root user, `HEALTHCHECK` instruction.
-  The image has to run on arm64, since the Phase 1 instance is Graviton — build
-  with `docker buildx build --platform linux/arm64` or build on the instance.
+  The Phase 1 instance is x86_64, the same architecture as the development
+  machines, so the image built locally is the image that runs on the server.
   *Why:* the image is the deploy artifact, and it is what makes the build
   reproducible instead of depending on whichever JDK happens to be installed.
 
@@ -96,7 +96,7 @@ was rewritten for two reasons, both worth recording:
 2. **Cost.** The Fargate target is ~USD 55/month once the task is sized to
    actually hold this application and the load balancer's public IPv4 addresses
    are counted — see the corrected table below. The single-instance equivalent
-   is ~USD 18. The difference buys nothing the current goal needs.
+   is ~USD 21. The difference buys nothing the current goal needs.
 
 None of this is throwaway work. VPCs, subnets, security groups, IAM, EBS and
 DNS are the same primitives Fargate sits on top of; the migration path is
@@ -107,7 +107,7 @@ Target architecture:
 ```mermaid
 flowchart LR
     App["Flutter App<br/>(Android)"] -->|HTTPS| Caddy["Caddy<br/>TLS termination"]
-    subgraph EC2["EC2 t4g.small — docker compose"]
+    subgraph EC2["EC2 t3.small — docker compose"]
         Caddy --> API["Spring Boot API"]
         API --> DB[("PostgreSQL<br/>container")]
     end
@@ -118,15 +118,19 @@ flowchart LR
   *Why:* the single cheapest insurance policy in this document.
 
 - [ ] **Launch the EC2 instance by hand, from the console** — ~2h
-  t4g.small, Amazon Linux 2023, one security group allowing 80 and 443 from
+  t3.small, Amazon Linux 2023, one security group allowing 80 and 443 from
   anywhere and 22 from a single address. Install Docker, `docker compose up`,
   confirm the API answers on the instance's public address.
   *Why:* this is the phase's actual learning content. Regions, AMIs, instance
   types, key pairs, security groups and EBS all get encountered here, one at a
   time, in a console that explains what it is asking for.
-  **Note:** t4g is Graviton, so arm64. An image built on an x86 machine will
-  not start. Use `docker buildx build --platform linux/arm64`, or build on the
-  instance itself.
+  **Note on the instance family:** t3 is x86_64, matching the development
+  machines, so images built locally run on the server unchanged. `t4g.small` is
+  Graviton — AWS's own ARM processors — and ~USD 3/month cheaper, but every
+  image then has to be cross-built with `--platform linux/arm64`, and an
+  architecture mismatch joins the list of suspects whenever a container refuses
+  to start. Chosen deliberately: the first deploy has enough unfamiliar parts
+  already, and the instance family can be changed later with a stop and a start.
 
 - [ ] **Domain and DNS** — ~1h
   Register a domain, allocate an Elastic IP, point an A record at it.
@@ -172,12 +176,12 @@ flowchart LR
 
 | Resource | Monthly | Note |
 |---|---|---|
-| EC2 t4g.small (2 GB) | ~USD 12 | t4g.micro is ~USD 6, but 1 GB is tight with PostgreSQL alongside |
+| EC2 t3.small (2 GB) | ~USD 15 | t3a.small is AMD rather than Intel, same x86_64, ~USD 14. t3.micro is ~USD 8, but 1 GB is tight with PostgreSQL alongside |
 | EBS gp3, 20 GB | ~USD 2 | |
 | Public IPv4 | ~USD 4 | USD 0.005/hr on every public address, since Feb 2024 |
 | Route 53 hosted zone | ~USD 0.50 | Plus ~USD 12/year for the domain |
 | S3 (backups) | <USD 1 | |
-| **Total** | **~USD 18** | Stop the instance when not in use: ~USD 2/month for the volume alone |
+| **Total** | **~USD 21** | Stop the instance when not in use: ~USD 2/month for the volume alone |
 
 The free tier is not a plan. Accounts created after 15 July 2025 get USD 100–200
 in credits expiring after six months, not the old 12-month allowance — check
