@@ -56,24 +56,89 @@ Blockers. Nothing downstream can start until these are done.
   a layer, and there was no way to supply a different database or mail account
   per environment.
 
-- [ ] **Dockerize the API** — ~3h
+- [x] **Dockerize the API** — ~3h
   Multi-stage build, slim JRE base, non-root user, `HEALTHCHECK` instruction.
   The Phase 1 instance is x86_64, the same architecture as the development
   machines, so the image built locally is the image that runs on the server.
+  Dependencies resolve in their own layer, ahead of `COPY src/`, so editing a
+  source file does not re-resolve the dependency tree. The runtime stage runs as
+  uid 1000 — not an arbitrary choice: the credential files are bind-mounted from
+  the host at `0600`, so the container user has to *be* their owner, and 1000 is
+  the first non-root account on developer machines, `ec2-user` and `ubuntu`
+  alike. The JVM is given `-XX:MaxRAMPercentage` rather than a fixed `-Xmx`, or
+  it sizes its heap against the whole machine and gets OOM-killed next to
+  PostgreSQL on a 2 GB instance.
   *Why:* the image is the deploy artifact, and it is what makes the build
   reproducible instead of depending on whichever JDK happens to be installed.
 
-- [ ] **`docker-compose.yml`, for local development and for the deploy** — ~1h
-  API + PostgreSQL + Caddy, seeded, one command to start. The `HEALTHCHECK`
-  above needs an endpoint to point at; `spring-boot-starter-actuator` is not in
-  the pom yet, and `/actuator/health` has to be added to the `permitAll` list in
-  `SecurityConfig` or it answers 401 and the container never reports healthy.
+- [x] **`docker-compose.yml`, for local development and for the deploy** — ~1h
+  API + PostgreSQL, seeded, one command to start: 16 seconds from an empty
+  volume to an API answering ranking queries. `spring-boot-starter-actuator` was
+  added and `/actuator/health` put on the `permitAll` list — without that it
+  answers 401 and the container never reports healthy. Only `health` is exposed;
+  the other actuator endpoints publish the environment and the datasource
+  configuration and stay authenticated. Actuator's mail health indicator is
+  disabled: it opens an authenticated SMTP connection to Gmail on every probe
+  and reports the whole application DOWN when that fails, which would make
+  container restarts depend on a third party with nothing to do with serving
+  product queries.
+  The API waits on `condition: service_healthy` rather than the default
+  `service_started`, because PostgreSQL accepts TCP connections for a while
+  before it will answer a query and Flyway runs during startup. Both services
+  publish on `127.0.0.1` only, so a security group that is too wide is not by
+  itself enough to expose the database.
+  **Caddy is deliberately not in the file yet.** Let's Encrypt has nothing to
+  validate without a domain pointed at the instance, so it arrives with the
+  Phase 1 item that has that prerequisite, rather than as a stub that cannot
+  work.
   *Why:* a reviewer who cannot run the project will not evaluate the project.
   This is also the file Phase 1 deploys — the same stack runs locally and on the
   instance, which is most of the argument for containerising in the first place.
 
-- [ ] **Versioned database migrations (Flyway or Liquibase)** — ~2h
+- [x] **Versioned database migrations (Flyway)** — ~2h
+  Flyway over Liquibase: the migrations are PostgreSQL-specific either way —
+  `pg_trgm`, a plpgsql function, two views — so Liquibase's database-agnostic
+  changelog format would have bought abstraction that this schema cannot use,
+  in exchange for a second dialect to learn on top of SQL.
+  `V1__baseline_schema.sql` is `outros/banco.sql` turned into a migration, and
+  is deliberately a translation rather than a redesign. Four things had to
+  change, because the original could not run start to finish: `pg_trgm` was
+  created twice, the second time without `IF NOT EXISTS`; an index was declared
+  on `produto (nome, latitude, longitude)`, but those coordinates are columns of
+  `localizacao` and that statement always failed; `fuzzystrmatch` was created
+  and never used; and the `INSERT`s were interleaved with the DDL.
+  Demo rows are not schema, so they moved to `db/seed`, a second Flyway location
+  that is not on the default list and has to be opted into by `FLYWAY_LOCATIONS`
+  — local development does, a deployed environment does not. That is what makes
+  it safe for the seeded accounts to carry a published password.
+  `baseline-on-migrate` is on, so a database built by hand before any of this
+  existed is stamped as already at `V1` and picks up `V2` onwards instead of
+  failing on a `CREATE TABLE` for a table that is already there.
   *Why:* schema-as-code is assumed at senior level; hand-applied DDL is not.
+
+- [x] **Make the Firebase service account key optional** — ~1h
+  Not in the original plan; found while verifying the compose file. The
+  `FirebaseMessaging` bean read `firebase.credentials.location` eagerly at
+  startup, so a checkout without a real `secrets/firebase-service-account.json`
+  failed to boot — and a service account key cannot be committed, generated
+  locally, or handed to a stranger the way an RSA keypair can. Push
+  notifications are one optional feature; they were a hard prerequisite for the
+  whole API.
+  The bean moved out of `PapaprecoapiApplication` into `config/FirebaseConfig`
+  and now returns null when the key is absent, logging what is disabled and how
+  to enable it. `FirebaseMessagingService` injects it with `required = false`
+  and reports `isEnabled()`; a missing key is a WARN, a key that exists but
+  cannot be parsed is an ERROR, and neither stops the application. The alert
+  sweep returns before running its query rather than after, and
+  `/notification/trigger-manual` answers 503 instead of `200 "enviadas!"` on an
+  instance that sent nothing.
+  Verified three ways: no key at all (starts, search and authentication work,
+  notifications report disabled), a malformed key (starts, logs ERROR), and the
+  real key (unchanged).
+  *Why:* item 2 of the definition of done below says a reviewer can clone the
+  repository and run `docker compose up`. Before this they could not, and the
+  failure was at startup rather than at the point they tried to use
+  notifications.
 
 ---
 
