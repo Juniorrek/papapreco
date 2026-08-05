@@ -161,7 +161,8 @@ was rewritten for two reasons, both worth recording:
 2. **Cost.** The Fargate target is ~USD 55/month once the task is sized to
    actually hold this application and the load balancer's public IPv4 addresses
    are counted — see the corrected table below. The single-instance equivalent
-   is ~USD 21. The difference buys nothing the current goal needs.
+   is ~USD 20, now measured rather than estimated. The difference buys nothing
+   the current goal needs.
 
 None of this is throwaway work. VPCs, subnets, security groups, IAM, EBS and
 DNS are the same primitives Fargate sits on top of; the migration path is
@@ -172,30 +173,105 @@ Target architecture:
 ```mermaid
 flowchart LR
     App["Flutter App<br/>(Android)"] -->|HTTPS| Caddy["Caddy<br/>TLS termination"]
-    subgraph EC2["EC2 t3.small — docker compose"]
+    subgraph EC2["EC2 t3a.small — docker compose"]
         Caddy --> API["Spring Boot API"]
         API --> DB[("PostgreSQL<br/>container")]
     end
     API -.nightly pg_dump.-> S3["S3"]
 ```
 
-- [ ] **AWS Budget alarm at USD 20 — before creating any other resource** — ~15min
+- [x] **AWS Budget alarm at USD 20 — before creating any other resource** — ~15min
+  A monthly cost budget, deliberately unfiltered so it covers every service in
+  every region, alerting at 85% actual, 100% actual and 100% forecasted. Created
+  while the account still held nothing.
+  Worth being precise about what it is: a smoke detector, not a sprinkler. It
+  sends email and stops nothing, and AWS has no hard spending cap of any kind.
+  Cost data also lands in the billing pipeline 8–24 hours behind reality and
+  budgets evaluate roughly three times a day, so an alert can arrive a day after
+  the spend that triggered it — irrelevant at ~USD 0.65/day, and precisely the
+  point if something runaway ever starts. The forecast threshold stays quiet for
+  the first month or two; forecasting needs history before it can predict.
   *Why:* the single cheapest insurance policy in this document.
 
-- [ ] **Launch the EC2 instance by hand, from the console** — ~2h
-  t3.small, Amazon Linux 2023, one security group allowing 80 and 443 from
-  anywhere and 22 from a single address. Install Docker, `docker compose up`,
-  confirm the API answers on the instance's public address.
+- [x] **Launch the EC2 instance by hand, from the console** — ~2h
+  **us-east-2 (Ohio), t3a.small, Amazon Linux 2023 x86_64, 20 GiB gp3**, one
+  security group allowing 80 and 443 from anywhere and 22 from a single address.
+  Docker, Compose, `docker compose up`, and the API answering `200 {"status":
+  "UP"}` on the instance's public address.
   *Why:* this is the phase's actual learning content. Regions, AMIs, instance
   types, key pairs, security groups and EBS all get encountered here, one at a
   time, in a console that explains what it is asking for.
-  **Note on the instance family:** t3 is x86_64, matching the development
-  machines, so images built locally run on the server unchanged. `t4g.small` is
-  Graviton — AWS's own ARM processors — and ~USD 3/month cheaper, but every
-  image then has to be cross-built with `--platform linux/arm64`, and an
-  architecture mismatch joins the list of suspects whenever a container refuses
-  to start. Chosen deliberately: the first deploy has enough unfamiliar parts
-  already, and the instance family can be changed later with a stop and a start.
+
+  What the console asked that this document had not anticipated:
+
+  - **Region is the largest cost lever in the phase, and it is chosen before
+    anything else exists.** sa-east-1 (São Paulo) is AWS's most expensive
+    region — on the order of 55–60% above the cheap US regions for the same
+    instance, which by itself puts this phase over its own budget. The pull the
+    other way is ~130 ms of latency from Brazil, imperceptible against an HTTP
+    API whose slowest path is SEFAZ scraping in Brazil regardless. Ohio, not
+    São Paulo.
+  - **t3a rather than t3.** AMD EPYC instead of Intel, ~10% cheaper, still
+    x86_64 — so nothing about the "images built locally run on the server
+    unchanged" argument changes. Marginally slower single-thread, which nothing
+    here notices.
+  - **Amazon Linux 2023 does not ship the Compose v2 plugin.** `dnf install
+    docker` gives the daemon and the CLI; `docker compose` then answers
+    `'compose' is not a docker command`. Installed by hand into
+    `/usr/local/lib/docker/cli-plugins`, pinned to a version rather than
+    `latest` so a rebuild months from now behaves the same.
+  - **2 GiB has no swap by default, and needs some.** `javac` compiling this
+    application next to a running PostgreSQL is close enough to the limit that
+    the OOM killer resolves it by shooting the JVM, which presents as a build
+    that stops mid-compile with no error. A 2 GiB swapfile in `/etc/fstab` is
+    slow but it is the difference between slow and dead.
+  - **The uid-1000 decision from Phase 0 paid off exactly as intended.**
+    `ec2-user` on AL2023 *is* uid 1000, so the bind-mounted `0600` credentials
+    are readable by the container's `app` user with nothing chowned on either
+    side.
+  - **The Dockerfile's `MaxRAMPercentage` had no limit to follow.** It sizes the
+    heap against the *container's* memory limit, and `docker-compose.yml` sets
+    none — so on a 2 GiB box the container's limit is the whole machine and the
+    JVM claims ~1.5 GiB, which is the exact failure the flag was chosen to
+    prevent. Corrected on the instance with an untracked
+    `docker-compose.override.yml` setting `mem_limit: 1g` on `api` and `512m` on
+    `db`. **Open decision:** whether that belongs in the committed compose file
+    instead. It probably does — the limits are correct on a laptop too, and
+    host-specific tuning that exists only on the host is the thing containers
+    were supposed to stop.
+  - **Verifying "answers on the public address" required opening a port on
+    purpose.** Both compose services bind to `127.0.0.1`, correctly, so nothing
+    is reachable from outside as shipped. Published on 80 briefly, confirmed
+    from a laptop, and reverted. An SSH local forward would have proved the API
+    works while proving nothing at all about the security group, and the
+    security group is half of what this item exists to teach.
+
+  The public IPv4 is auto-assigned and therefore changes on every stop/start,
+  which is what the next item fixes.
+
+- [x] **Permit `/error` in `SecurityConfig`** — ~30min
+  Not in the original plan; a known defect that had been deferred, fixed here
+  because this is the phase where it does the most damage. The servlet container
+  re-dispatches any failed request to `/error` to render the response body, and
+  that dispatch runs through the security filter chain again — so with `/error`
+  falling through to `anyRequest().authenticated()`, the status reaching the
+  client described the error page's access rules rather than the original fault.
+  Measured against the running stack, this was broader than the "404s and 500s"
+  it had been filed as: an ordinary validation `400` on a `permitAll` endpoint
+  came back `401` with a `WWW-Authenticate` header too. Every bug in the system
+  presented as broken authentication.
+  Permitting it leaks nothing — `server.error.include-message` and
+  `include-stacktrace` both default to `never`, so the body is timestamp,
+  status, error and path.
+  One case is not this bug and did not change: a request to a path outside every
+  `permitAll` prefix still answers `401`, because Spring Security has no rule for
+  it and cannot know it is unmapped. Inherent, and the only way to change it
+  would be to disclose which paths exist.
+  *Why:* the first hour on a new instance is spent curling unfamiliar URLs and
+  reading status codes. Deferring this costs more in that hour than anywhere
+  else in the project — demonstrated live, in fact: the first `404` attempted
+  against the deployed API came back `401`, because the instance had cloned the
+  branch before the fix landed on it.
 
 - [ ] **Domain and DNS** — ~1h
   Register a domain, allocate an Elastic IP, point an A record at it.
@@ -239,14 +315,28 @@ flowchart LR
 
 ### Cost
 
+Revised against what was actually launched — us-east-2, t3a.small — rather than
+against the estimate this document carried before. On-demand list prices; the
+launch wizard shows the live hourly rate per instance type and is the
+authoritative source.
+
 | Resource | Monthly | Note |
 |---|---|---|
-| EC2 t3.small (2 GB) | ~USD 15 | t3a.small is AMD rather than Intel, same x86_64, ~USD 14. t3.micro is ~USD 8, but 1 GB is tight with PostgreSQL alongside |
-| EBS gp3, 20 GB | ~USD 2 | |
-| Public IPv4 | ~USD 4 | USD 0.005/hr on every public address, since Feb 2024 |
+| EC2 t3a.small (2 GB) | ~USD 13.70 | USD 0.0188/hr × 730. t3.small is the Intel equivalent at ~USD 15. t3.micro is ~USD 8, but 1 GB is tight with PostgreSQL alongside |
+| EBS gp3, 20 GB | ~USD 1.60 | USD 0.08/GB-month. Billed while the instance is stopped, too |
+| Public IPv4 | ~USD 3.65 | USD 0.005/hr on every public address, since Feb 2024 |
+| **Running, before a domain** | **~USD 19** | Where the account stands today |
 | Route 53 hosted zone | ~USD 0.50 | Plus ~USD 12/year for the domain |
 | S3 (backups) | <USD 1 | |
-| **Total** | **~USD 21** | Stop the instance when not in use: ~USD 2/month for the volume alone |
+| **Total** | **~USD 20.50** | Stop the instance when not in use: ~USD 1.60/month for the volume alone |
+
+Note the collision this creates with the item above: **a USD 20 budget alarm
+will trip in any full month the instance is left running**, at 85% around day
+25 and at 100% on the last day or two. That is not a miscalibration — it is a
+smoke detector set just above steady state, which is the correct place for one —
+but the first alert should be recognised as arithmetic rather than as news. The
+alternative is not a higher threshold, it is the line above: the instance does
+not need to run 24/7 during a phase where nobody is using it yet.
 
 The free tier is not a plan. Accounts created after 15 July 2025 get USD 100–200
 in credits expiring after six months, not the old 12-month allowance — check
