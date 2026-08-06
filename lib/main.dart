@@ -4,6 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:papapreco/api/firebase_api.dart';
 import 'package:papapreco/misc/auth/auth_provider.dart';
 import 'package:papapreco/misc/auth/map_provider.dart';
+import 'package:papapreco/rest/api.dart';
 import 'package:papapreco/service/navigator_service.dart';
 import 'package:papapreco/service/notification_service.dart';
 import 'package:papapreco/theme/theme.dart';
@@ -33,6 +34,12 @@ import 'routes/routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Before anything else, and before any network work: a release build with no
+  // API_BASE_URL is misbuilt, and should say so rather than start up and fail
+  // every request.
+  API.assertConfiguredForRelease();
+
   await Firebase.initializeApp();
 
   const AndroidInitializationSettings initializationSettingsAndroid =
