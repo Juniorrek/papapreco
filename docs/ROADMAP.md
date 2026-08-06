@@ -172,12 +172,13 @@ Target architecture:
 
 ```mermaid
 flowchart LR
-    App["Flutter App<br/>(Android)"] -->|HTTPS| Caddy["Caddy<br/>TLS termination"]
+    App["Flutter App<br/>(Android)"] -->|HTTPS| DNS["papapreco.duckdns.org<br/>republished on every boot"]
     subgraph EC2["EC2 t3a.small — docker compose"]
-        Caddy --> API["Spring Boot API"]
+        Caddy["Caddy<br/>TLS termination"] --> API["Spring Boot API"]
         API --> DB[("PostgreSQL<br/>container")]
+        API -.nightly pg_dump.-> Vol[("EBS volume")]
     end
-    API -.nightly pg_dump.-> S3["S3"]
+    DNS --> Caddy
 ```
 
 - [x] **AWS Budget alarm at USD 20 — before creating any other resource** — ~15min
@@ -273,25 +274,134 @@ flowchart LR
   against the deployed API came back `401`, because the instance had cloned the
   branch before the fix landed on it.
 
-- [ ] **Domain and DNS** — ~1h
-  Register a domain, allocate an Elastic IP, point an A record at it.
-  *Why:* an Elastic IP survives a stop/start and the default public address
-  does not. TLS needs a real name, so this blocks the next item.
+- [x] **Domain and DNS** — ~1h
+  Landed as **`papapreco.duckdns.org`, a free subdomain, with no registrar, no
+  Route 53 and no Elastic IP.** That is three deliberate departures from what
+  this item originally said, and the reasoning for each is below.
+  *Why:* the name is what the APK is built against, and TLS is issued for it.
 
-- [ ] **Caddy in front, for HTTPS** — ~1h
-  Added to the compose file as a reverse proxy. Automatic Let's Encrypt
-  certificates, automatic renewal, a three-line Caddyfile.
+  **Why a name at all, given that the APK could hold an address.** Not for TLS,
+  as this document previously claimed — Let's Encrypt has issued certificates
+  for bare IP addresses since January 2026, so an `https://<ip>/` API would
+  satisfy Android's cleartext restriction. Two things rule it out anyway. IP
+  certificates are capped at 160 hours, six days, precisely because an address
+  can be reassigned to a stranger; an instance stopped for a week comes back
+  with an expired certificate every time. And the base URL is compiled into the
+  APK, so an address there has to stay true on every phone that ever installed
+  it — forfeiting any instance or region move, the address release below, and
+  the Fargate target at the end of this phase. The name buys the right to change
+  the address later. That is the whole purchase.
+
+  **Why not a registered domain.** Priced at the point of decision: Route 53
+  registration plus hosted zone ~USD 21/year, Porkbun plus a Route 53 zone ~USD
+  17, Cloudflare registrar with Cloudflare DNS ~USD 10.46, `registro.br`
+  `.com.br` ~USD 13. Against a stack costing ~USD 19/month, none of these is
+  where the money goes, and Route 53 would have been the better *learning*
+  purchase — a hosted zone is the thing Terraform later manages.
+  It went to DuckDNS because the goal of this phase was restated more narrowly
+  than the document assumed: get the API reachable and the APK installable, not
+  ship a product. The cost of that choice is a third-party dependency in the
+  critical path — if DuckDNS goes away, every installed APK loses its API with
+  no recourse, which is the exact failure a domain exists to prevent. Accepted
+  knowingly, because installs are expected to be short evaluations rather than
+  sustained use. **Revisit before the app is put in front of anyone who
+  matters**; it is one `--dart-define` and one DNS record to undo.
+
+  **Why no Elastic IP, having allocated one.** It was allocated and associated
+  first, which is what made the next item's certificate possible, and then
+  released. An Elastic IP is billed at USD 0.005/hr whether or not it is
+  attached to a running instance — ~USD 3.65/month, more than twice the EBS cost
+  of a stopped instance — and a stopped instance is the whole point of the cost
+  strategy above. In its place, `deploy/duckdns/` in the API repository: a
+  `systemd` oneshot plus timer that publishes the instance's current public
+  address 15 seconds after boot and every five minutes thereafter. The update
+  call sends an empty `ip=`, so DuckDNS records the source address of the
+  request; asking the instance for its own address would return the private
+  `172.31.x.x` on its interface and point the name at nothing.
+  This replaced the "IAM role, systemd unit and shell script" that the deferred
+  version of this note used to argue against, and the argument no longer holds:
+  with DuckDNS the credential is a token in a `curl`, so there is no IAM role
+  and no AWS permissions at all.
+
+  Observed while doing it, and not anticipated: **disassociating the Elastic IP
+  was enough on its own.** The instance was assigned a fresh public address
+  immediately, with no stop/start, and the timer published it within the five
+  minute interval. The disassociate-verify-then-release ordering was chosen so
+  that a failure would have left the address re-associable; it turned out not to
+  be needed, but it is the ordering to repeat, because a released address cannot
+  be recovered.
+
+  **`duckdns-park.service`, which was not in the plan.** A stopped instance
+  returns its public address to AWS, which reassigns it — while the DNS record
+  still points there until the instance comes back. That window is not just
+  misrouted traffic: HTTP-01 proves control of whatever a name currently
+  resolves to, so whoever received that address could be issued a *valid*
+  certificate for this domain. A shutdown unit parks the record at `127.0.0.1`,
+  and the next boot republishes the real one. Ordering matters and is easy to get
+  wrong: the unit is ordered `After=network-online.target` and nothing else,
+  because systemd stops units before the targets they follow, so `ExecStop` runs
+  while there is still a network. `DefaultDependencies=no` would have moved it
+  past the network teardown and silently broken it.
+
+- [x] **Caddy in front, for HTTPS** — ~1h
+  A `caddy` service in the compose file, reverse-proxying to `api` over the
+  compose network. The Caddyfile is the domain and one `reverse_proxy` line;
+  certificate issuance, renewal at 60 days, and the `:80` → `:443` redirect are
+  all defaults rather than configuration.
   *Why:* it replaces the ALB at USD 0 rather than ~USD 17/month. It is also a
   hard requirement rather than polish: Android has blocked cleartext HTTP by
   default since API 28, so the app cannot reach an `http://` API on any current
   phone.
 
-- [ ] **Nightly `pg_dump` to S3** — ~1h
-  Cron on the instance, with a lifecycle rule expiring objects after 30 days.
+  **The service sits behind a `prod` compose profile, not in a second compose
+  file.** The usual answer is a `docker-compose.prod.yml`, and it was rejected
+  for a specific reason: passing `-f` stops Compose auto-loading
+  `docker-compose.override.yml`, and on the instance that override is what caps
+  the JVM heap. A second file would have silently removed the memory limits as a
+  side effect of adding TLS — reintroducing the exact failure the previous item
+  was written to fix.
+
+  **`CADDY_DOMAIN` is defaulted to empty rather than guarded with `:?`.** The
+  first attempt used the `${VAR:?message}` form the database variables use, and
+  it broke `docker compose up` on a laptop: **Compose interpolates the entire
+  file before it applies profiles**, so a guard on a service that is not being
+  started still fires. An empty default leaves the Caddyfile with no site
+  address, which Caddy rejects at parse time, before any ACME call. The error
+  message does not say so — an empty name makes the block look like Caddy's
+  global options and it reports `unrecognized global option: reverse_proxy`.
+
+  Certificates live in a named volume. Let's Encrypt issues five identical
+  certificates per week and then refuses for the remainder of it, so a volume
+  that gets destroyed on every restart is a week without HTTPS rather than a
+  warning.
+
+  No `forward-headers-strategy` was needed: the API builds no absolute
+  self-referencing URLs, and the one `ServletUriComponentsBuilder` call in
+  `AuthController` is commented out. If password-reset links ever start being
+  generated server-side, this becomes load-bearing.
+
+  **Within seconds of the name resolving**, the logs filled with requests for
+  `/.env.production`, `/secrets.json`, `/server.key`, `/.bash_history` and
+  `/config.php` from unrelated addresses. That is untargeted internet-wide
+  scanning, and it is the concrete form of the argument that a public address is
+  indexed within hours no matter what is or is not written down about it. None
+  of it can succeed: Caddy has no `file_server` directive, so it has no ability
+  to read a file from disk at all, and `secrets/` is mounted into the API
+  container rather than into Caddy.
+
+- [ ] **Nightly `pg_dump`, to the instance's own volume** — ~30min
+  Cron on the instance, keeping the last 7 dumps.
   *Why:* PostgreSQL in a container on the application's own instance has no
   managed backups and no failover. That is the trade being made in exchange for
   not paying for RDS yet, and it should be a deliberate one rather than an
   oversight discovered later.
+  **Reduced from "to S3", deliberately.** A dump on the same EBS volume as the
+  database it came from protects against the failure that actually happens here
+  — a bad migration, a `docker compose down -v`, a mistaken `DELETE` — and not
+  at all against losing the volume. That is the correct trade only because the
+  data is demo data with no users depending on it. It stops being correct the
+  moment anyone's real receipts are in there, and at that point S3 with a
+  30-day lifecycle rule is the item this used to be.
 
 - [ ] **Ship a signed release APK** — ~3h
   The distributable build is its own chain of prerequisites, none of which are
@@ -307,7 +417,8 @@ flowchart LR
   3. Register the release key's SHA-1 fingerprint in the Firebase console.
      **Google Sign-In fails on every installed APK if this is skipped**, while
      continuing to work on the development machine.
-  4. Build with `--dart-define=API_BASE_URL=https://<domain>/papaprecoapi`.
+  4. Build with
+     `--dart-define=API_BASE_URL=https://papapreco.duckdns.org/papaprecoapi`.
   5. Publish to GitHub Releases.
   *Why:* this is the item the entire phase exists to reach. It is also the one
   with the most ways to look finished while being broken for everyone except
@@ -324,11 +435,11 @@ authoritative source.
 |---|---|---|
 | EC2 t3a.small (2 GB) | ~USD 13.70 | USD 0.0188/hr × 730. t3.small is the Intel equivalent at ~USD 15. t3.micro is ~USD 8, but 1 GB is tight with PostgreSQL alongside |
 | EBS gp3, 20 GB | ~USD 1.60 | USD 0.08/GB-month. Billed while the instance is stopped, too |
-| Public IPv4 | ~USD 3.65 | USD 0.005/hr on every public address, since Feb 2024 |
-| **Running, before a domain** | **~USD 19** | Where the account stands today |
-| Route 53 hosted zone | ~USD 0.50 | Plus ~USD 12/year for the domain |
-| S3 (backups) | <USD 1 | |
-| **Total** | **~USD 20.50** | Stop the instance when not in use: ~USD 1.60/month for the volume alone |
+| Public IPv4 | ~USD 3.65 | USD 0.005/hr on every public address, since Feb 2024. Auto-assigned, not reserved — so it is billed only while the instance runs |
+| DNS | USD 0 | DuckDNS subdomain, no registrar and no hosted zone |
+| Backups | USD 0 | `pg_dump` to the instance's own volume, rather than the S3 bucket this document originally planned |
+| **Total, running** | **~USD 19** | |
+| **Total, stopped** | **~USD 1.60** | The 20 GiB volume alone. Nothing else in the stack is billed while it is off — which is what releasing the Elastic IP bought |
 
 Note the collision this creates with the item above: **a USD 20 budget alarm
 will trip in any full month the instance is left running**, at 85% around day
@@ -352,7 +463,7 @@ new primitive, learned against a system that already runs.
   managed backups. The best next primitive to add — but not on day one, where
   it would be one more unfamiliar thing standing between the code and a working
   URL.
-- [ ] **Terraform: instance, security group, Elastic IP, DNS** — ~5h
+- [ ] **Terraform: instance, security group, EBS, the DuckDNS units** — ~5h
   *Why:* codifying something already built and understood. Destroy it, bring it
   back with `terraform apply`, and the value of infrastructure-as-code is
   demonstrated rather than asserted.
