@@ -403,7 +403,22 @@ flowchart LR
   moment anyone's real receipts are in there, and at that point S3 with a
   30-day lifecycle rule is the item this used to be.
 
-- [ ] **Ship a signed release APK** — ~3h
+- [~] **Ship a signed release APK** — ~3h
+  **Built, signed and verified working on a real device on 7 Aug 2026; not yet
+  published.** Steps 1–4 below are done. `apksigner` confirms the APK carries
+  the release certificate (`b1a2a339…158681`) rather than the debug one, and
+  installing it proved the deployment end to end from a phone on mobile data:
+  HTTPS through Caddy, registration, the confirmation email out through Gmail
+  SMTP, login against the JWT keys, and a product written and read back.
+  Two things remain: **Google Sign-In still fails** — the OAuth clients were
+  registered but the app reports `Erro de conexão`, a generic handler that hides
+  the real exception — and step 5, the GitHub release, has not been done.
+  Worth recording because it looked like a bug and was not: **product search
+  returned nothing on first run.** The server sets
+  `FLYWAY_LOCATIONS=classpath:db/migration` with the seed location deliberately
+  dropped, so the database really was empty. It populated as soon as a product
+  was added.
+
   The distributable build is its own chain of prerequisites, none of which are
   visible when running from an IDE:
   1. Generate a release keystore. `android/.gitignore` already covers `*.jks`
@@ -414,9 +429,21 @@ flowchart LR
      signed with the debug key. While there, delete the commented-out block
      above them — it carries a plaintext keystore password for a keystore that
      is not in the repository.
-  3. Register the release key's SHA-1 fingerprint in the Firebase console.
-     **Google Sign-In fails on every installed APK if this is skipped**, while
-     continuing to work on the development machine.
+  3. Register the release key's SHA-1 fingerprint — **not in the Firebase
+     console, which is what this document used to say.** Google Sign-In here
+     does not read `google-services.json` at all: `login_page.dart` passes a
+     hardcoded `serverClientId`, and `AuthController` validates the token's
+     audience against the same value. Both belong to Google Cloud project
+     `736661748519`, which is *not* the Firebase project (`papapreco-38a7a`,
+     number `301144420668`) and never had Firebase added, so it does not appear
+     in the Firebase console at all. The fingerprint goes in that project's
+     Credentials page as an Android OAuth client.
+     An Android OAuth client holds exactly one package name and one
+     fingerprint, so debug and release are necessarily two clients.
+     Found while doing this: the only client registered carried a *third*
+     fingerprint, from a machine that no longer exists — so Google Sign-In had
+     been broken locally for some time and had gone unnoticed, because the app
+     reports every failure as `Erro de conexão`.
   4. Build with
      `--dart-define=API_BASE_URL=https://papapreco.duckdns.org/papaprecoapi`.
   5. Publish to GitHub Releases.
