@@ -28,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     serverClientId:
-        '736661748519-433ei1nefrp6m1f0k3forqbh904r8oac.apps.googleusercontent.com',
+        '736661748519-pun42oemsp2cooo7ukgijrnc3ain4s5d.apps.googleusercontent.com',
     scopes: [
       'email',
       /*'profile',
@@ -81,7 +81,8 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Erro de conexão.'),
           behavior: SnackBarBehavior.floating));
-      //print('EROO $e');
+      // ignore: avoid_print
+      print('Google Sign-In failed: $e');
     } finally {
       setState(() {
         _isLoading = false;

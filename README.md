@@ -47,13 +47,20 @@ The backend handles product storage, search functionality, and NFC-e data parsin
 
 ## 🚀 Getting Started
 
-Follow these steps to run the app locally:
+This app always talks to [the API](https://github.com/Juniorrek/papaprecoapi) —
+either a copy running on your own machine, or the live deployment. Both are
+just a build argument away; nothing about the app code differs between them.
 
 ### Prerequisites
 
 - Flutter SDK
-- Android Studio or VS Code with Flutter and Dart plugins  
-- Android emulator or connected device  
+- Android Studio or VS Code with Flutter and Dart plugins
+- An Android emulator with a **Google Play** system image, not just "Google
+  APIs" — Google Sign-In needs real Play Services and silently can't work
+  without one. Check `PlayStore.enabled=true` in
+  `~/.android/avd/<name>.avd/config.ini`, or create one in Android Studio's
+  Device Manager / `flutter emulators --create` and pick the Play Store
+  variant.
 
 ### Installation
 
@@ -61,7 +68,46 @@ Follow these steps to run the app locally:
 git clone https://github.com/Juniorrek/papapreco.git
 cd papapreco
 flutter pub get
+```
+
+### Running against a local API
+
+Start the API first — see
+[papaprecoapi's README](https://github.com/Juniorrek/papaprecoapi#running-with-docker-compose):
+
+```bash
+cd ../papaprecoapi
+cp .env.example .env   # once, then fill in real values
+docker compose up --build
+```
+
+Then launch an emulator and run the app. The default `API_BASE_URL` already
+points at a locally running API, so a bare `flutter run` is enough:
+
+```bash
+flutter emulators                       # lists available emulators
+flutter emulators --launch <emulator-id>
 flutter run
+```
+
+**Cleartext HTTP in debug builds is only permitted to `10.0.2.2` and
+`localhost`** — see
+`android/app/src/debug/res/xml/network_security_config.xml`. Android has
+blocked plain HTTP everywhere else by default since API 28, debug builds
+included, so testing from a physical device against an API on your LAN needs
+that device's address added there too, or a rebuild against HTTPS. Release
+builds carry no such exemption; see `assertConfiguredForRelease` in
+`lib/rest/api.dart`.
+
+### Running against a deployed API
+
+No local API needed — useful for testing sign-in, notifications, or anything
+that depends on data other people have added. Point it at whichever deployment
+you have (your own, per [papaprecoapi](https://github.com/Juniorrek/papaprecoapi)'s
+deploy docs, or one you were given the address of):
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://your-deployment.example.org/papaprecoapi
 ```
 
 ### Configuration
@@ -75,11 +121,8 @@ is passed at build time with `--dart-define`:
 | `DEV_QRCODE_URL` | *(empty)* | Optional NFC-e URL used to pre-fill the "insert QR code" field during development, so you don't have to scan a real receipt on every run. Empty means no pre-fill. |
 
 ```bash
-# Physical device on the same LAN as the API (use your machine's LAN address)
-flutter run --dart-define=API_BASE_URL=http://192.168.0.10:8080/papaprecoapi
-
-# Deployed environment
-flutter build apk --dart-define=API_BASE_URL=https://api.example.com
+# Deployed environment, for a distributable release build
+flutter build apk --dart-define=API_BASE_URL=https://your-deployment.example.org/papaprecoapi
 ```
 
 Because these are compile-time constants, changing one requires a rebuild — a hot
