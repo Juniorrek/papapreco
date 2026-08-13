@@ -1,8 +1,8 @@
-# PapaPreco — Engineering Roadmap
+# PapaPreco: Engineering Roadmap
 
 This document tracks the evolution of PapaPreco from a working prototype into a
 production-deployed system. Each item states **what**, **why**, and a rough
-effort estimate, so the reasoning behind the ordering is auditable — not just
+effort estimate, so the reasoning behind the ordering is auditable, not just
 the outcome.
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` deliberately skipped
@@ -12,11 +12,11 @@ unknowns need slack) → predictable work → presentation last.
 
 ---
 
-## Phase 0 — Make it deployable
+## Phase 0: Make it deployable
 
 Blockers. Nothing downstream can start until these are done.
 
-- [x] **Externalize API configuration** — ~2h
+- [x] **Externalize API configuration** (~2h)
   Replaced the `Configs.status` enum and hardcoded LAN IPs in `lib/rest/api.dart`
   with a single `--dart-define=API_BASE_URL=...`, which carries the scheme and
   the API's context path so pointing at an HTTPS deployment is a build argument
@@ -29,18 +29,18 @@ Blockers. Nothing downstream can start until these are done.
   file in the repository, and no deploy is possible while the base URL is fixed
   at compile time.
 
-- [x] **Delete or rewrite `test/widget_test.dart`** — ~15min
+- [x] **Delete or rewrite `test/widget_test.dart`** (~15min)
   The file contained the Flutter counter template and asserted on widgets that
   did not exist. Deleted, and replaced with `test/rest/api_test.dart` covering
-  URL resolution and query/path escaping — `flutter test` would otherwise fail
+  URL resolution and query/path escaping; `flutter test` would otherwise fail
   on an empty suite.
   *Why:* a red test suite is strictly worse than no test suite.
 
-- [x] **Rotate the API's committed credentials and externalize its config** — ~3h
+- [x] **Rotate the API's committed credentials and externalize its config** (~3h)
   Not in the original plan; found while starting the Docker work. Three live
   secrets were committed to `papaprecoapi`, which is a public repository: the
   Gmail app password in `application.yaml`, the RSA private key signing every
-  JWT, and a `firebase-adminsdk` **service account** key — a server-side admin
+  JWT, and a `firebase-adminsdk` **service account** key, a server-side admin
   credential for the whole Firebase project, which is a different thing from
   the `google-services.json` client config discussed in Phase 4. All three were
   rotated and the old ones revoked at the provider, then moved to a gitignored
@@ -48,7 +48,7 @@ Blockers. Nothing downstream can start until these are done.
   documents the variable list. `SecurityConfig` was reading its keys via
   `@Value("jwt.rsa.pub")` with no `${}`, so the JWT properties in
   `application.yaml` were dead config and no override could have worked. Log
-  levels dropped from `TRACE` to `INFO` defaults — `BasicBinder: TRACE` prints
+  levels dropped from `TRACE` to `INFO` defaults, because `BasicBinder: TRACE` prints
   bound SQL parameters, meaning password hashes and verification codes.
   *Why:* rotation is the only real fix once a secret is pushed, and the roadmap
   already ruled history rewriting out of scope. Nothing could be deployed
@@ -56,13 +56,13 @@ Blockers. Nothing downstream can start until these are done.
   a layer, and there was no way to supply a different database or mail account
   per environment.
 
-- [x] **Dockerize the API** — ~3h
+- [x] **Dockerize the API** (~3h)
   Multi-stage build, slim JRE base, non-root user, `HEALTHCHECK` instruction.
   The Phase 1 instance is x86_64, the same architecture as the development
   machines, so the image built locally is the image that runs on the server.
   Dependencies resolve in their own layer, ahead of `COPY src/`, so editing a
   source file does not re-resolve the dependency tree. The runtime stage runs as
-  uid 1000 — not an arbitrary choice: the credential files are bind-mounted from
+  uid 1000, not an arbitrary choice: the credential files are bind-mounted from
   the host at `0600`, so the container user has to *be* their owner, and 1000 is
   the first non-root account on developer machines, `ec2-user` and `ubuntu`
   alike. The JVM is given `-XX:MaxRAMPercentage` rather than a fixed `-Xmx`, or
@@ -71,10 +71,10 @@ Blockers. Nothing downstream can start until these are done.
   *Why:* the image is the deploy artifact, and it is what makes the build
   reproducible instead of depending on whichever JDK happens to be installed.
 
-- [x] **`docker-compose.yml`, for local development and for the deploy** — ~1h
+- [x] **`docker-compose.yml`, for local development and for the deploy** (~1h)
   API + PostgreSQL, seeded, one command to start: 16 seconds from an empty
   volume to an API answering ranking queries. `spring-boot-starter-actuator` was
-  added and `/actuator/health` put on the `permitAll` list — without that it
+  added and `/actuator/health` put on the `permitAll` list; without that it
   answers 401 and the container never reports healthy. Only `health` is exposed;
   the other actuator endpoints publish the environment and the datasource
   configuration and stay authenticated. Actuator's mail health indicator is
@@ -92,12 +92,12 @@ Blockers. Nothing downstream can start until these are done.
   Phase 1 item that has that prerequisite, rather than as a stub that cannot
   work.
   *Why:* a reviewer who cannot run the project will not evaluate the project.
-  This is also the file Phase 1 deploys — the same stack runs locally and on the
+  This is also the file Phase 1 deploys: the same stack runs locally and on the
   instance, which is most of the argument for containerising in the first place.
 
-- [x] **Versioned database migrations (Flyway)** — ~2h
-  Flyway over Liquibase: the migrations are PostgreSQL-specific either way —
-  `pg_trgm`, a plpgsql function, two views — so Liquibase's database-agnostic
+- [x] **Versioned database migrations (Flyway)** (~2h)
+  Flyway over Liquibase: the migrations are PostgreSQL-specific either way
+  (`pg_trgm`, a plpgsql function, two views), so Liquibase's database-agnostic
   changelog format would have bought abstraction that this schema cannot use,
   in exchange for a second dialect to learn on top of SQL.
   `V1__baseline_schema.sql` is `outros/banco.sql` turned into a migration, and
@@ -108,19 +108,19 @@ Blockers. Nothing downstream can start until these are done.
   `localizacao` and that statement always failed; `fuzzystrmatch` was created
   and never used; and the `INSERT`s were interleaved with the DDL.
   Demo rows are not schema, so they moved to `db/seed`, a second Flyway location
-  that is not on the default list and has to be opted into by `FLYWAY_LOCATIONS`
-  — local development does, a deployed environment does not. That is what makes
+  that is not on the default list and has to be opted into by `FLYWAY_LOCATIONS`.
+  Local development does, a deployed environment does not. That is what makes
   it safe for the seeded accounts to carry a published password.
   `baseline-on-migrate` is on, so a database built by hand before any of this
   existed is stamped as already at `V1` and picks up `V2` onwards instead of
   failing on a `CREATE TABLE` for a table that is already there.
   *Why:* schema-as-code is assumed at senior level; hand-applied DDL is not.
 
-- [x] **Make the Firebase service account key optional** — ~1h
+- [x] **Make the Firebase service account key optional** (~1h)
   Not in the original plan; found while verifying the compose file. The
   `FirebaseMessaging` bean read `firebase.credentials.location` eagerly at
   startup, so a checkout without a real `secrets/firebase-service-account.json`
-  failed to boot — and a service account key cannot be committed, generated
+  failed to boot, and a service account key cannot be committed, generated
   locally, or handed to a stranger the way an RSA keypair can. Push
   notifications are one optional feature; they were a hard prerequisite for the
   whole API.
@@ -142,7 +142,7 @@ Blockers. Nothing downstream can start until these are done.
 
 ---
 
-## Phase 1 — Get it on AWS
+## Phase 1: Get it on AWS
 
 The goal of this phase is narrow and concrete: **a stranger can install the APK
 and use the app, without running anything themselves.** It is not about
@@ -160,7 +160,7 @@ was rewritten for two reasons, both worth recording:
    *for* infrastructure-as-code stops being abstract.
 2. **Cost.** The Fargate target is ~USD 55/month once the task is sized to
    actually hold this application and the load balancer's public IPv4 addresses
-   are counted — see the corrected table below. The single-instance equivalent
+   are counted; see the corrected table below. The single-instance equivalent
    is ~USD 20, now measured rather than estimated. The difference buys nothing
    the current goal needs.
 
@@ -173,7 +173,7 @@ Target architecture:
 ```mermaid
 flowchart LR
     App["Flutter App<br/>(Android)"] -->|HTTPS| DNS["papapreco.duckdns.org<br/>republished on every boot"]
-    subgraph EC2["EC2 t3a.small — docker compose"]
+    subgraph EC2["EC2 t3a.small · docker compose"]
         Caddy["Caddy<br/>TLS termination"] --> API["Spring Boot API"]
         API --> DB[("PostgreSQL<br/>container")]
         API -.nightly pg_dump.-> Vol[("EBS volume")]
@@ -181,7 +181,7 @@ flowchart LR
     DNS --> Caddy
 ```
 
-- [x] **AWS Budget alarm at USD 20 — before creating any other resource** — ~15min
+- [x] **AWS Budget alarm at USD 20, before creating any other resource** (~15min)
   A monthly cost budget, deliberately unfiltered so it covers every service in
   every region, alerting at 85% actual, 100% actual and 100% forecasted. Created
   while the account still held nothing.
@@ -189,12 +189,12 @@ flowchart LR
   sends email and stops nothing, and AWS has no hard spending cap of any kind.
   Cost data also lands in the billing pipeline 8–24 hours behind reality and
   budgets evaluate roughly three times a day, so an alert can arrive a day after
-  the spend that triggered it — irrelevant at ~USD 0.65/day, and precisely the
+  the spend that triggered it: irrelevant at ~USD 0.65/day, and precisely the
   point if something runaway ever starts. The forecast threshold stays quiet for
   the first month or two; forecasting needs history before it can predict.
   *Why:* the single cheapest insurance policy in this document.
 
-- [x] **Launch the EC2 instance by hand, from the console** — ~2h
+- [x] **Launch the EC2 instance by hand, from the console** (~2h)
   **us-east-2 (Ohio), t3a.small, Amazon Linux 2023 x86_64, 20 GiB gp3**, one
   security group allowing 80 and 443 from anywhere and 22 from a single address.
   Docker, Compose, `docker compose up`, and the API answering `200 {"status":
@@ -207,13 +207,13 @@ flowchart LR
 
   - **Region is the largest cost lever in the phase, and it is chosen before
     anything else exists.** sa-east-1 (São Paulo) is AWS's most expensive
-    region — on the order of 55–60% above the cheap US regions for the same
+    region, on the order of 55–60% above the cheap US regions for the same
     instance, which by itself puts this phase over its own budget. The pull the
     other way is ~130 ms of latency from Brazil, imperceptible against an HTTP
     API whose slowest path is SEFAZ scraping in Brazil regardless. Ohio, not
     São Paulo.
   - **t3a rather than t3.** AMD EPYC instead of Intel, ~10% cheaper, still
-    x86_64 — so nothing about the "images built locally run on the server
+    x86_64, so nothing about the "images built locally run on the server
     unchanged" argument changes. Marginally slower single-thread, which nothing
     here notices.
   - **Amazon Linux 2023 does not ship the Compose v2 plugin.** `dnf install
@@ -232,12 +232,12 @@ flowchart LR
     side.
   - **The Dockerfile's `MaxRAMPercentage` had no limit to follow.** It sizes the
     heap against the *container's* memory limit, and `docker-compose.yml` sets
-    none — so on a 2 GiB box the container's limit is the whole machine and the
+    none, so on a 2 GiB box the container's limit is the whole machine and the
     JVM claims ~1.5 GiB, which is the exact failure the flag was chosen to
     prevent. Corrected on the instance with an untracked
     `docker-compose.override.yml` setting `mem_limit: 1g` on `api` and `512m` on
     `db`. **Open decision:** whether that belongs in the committed compose file
-    instead. It probably does — the limits are correct on a laptop too, and
+    instead. It probably does: the limits are correct on a laptop too, and
     host-specific tuning that exists only on the host is the thing containers
     were supposed to stop.
   - **Verifying "answers on the public address" required opening a port on
@@ -250,18 +250,18 @@ flowchart LR
   The public IPv4 is auto-assigned and therefore changes on every stop/start,
   which is what the next item fixes.
 
-- [x] **Permit `/error` in `SecurityConfig`** — ~30min
+- [x] **Permit `/error` in `SecurityConfig`** (~30min)
   Not in the original plan; a known defect that had been deferred, fixed here
   because this is the phase where it does the most damage. The servlet container
   re-dispatches any failed request to `/error` to render the response body, and
-  that dispatch runs through the security filter chain again — so with `/error`
+  that dispatch runs through the security filter chain again, so with `/error`
   falling through to `anyRequest().authenticated()`, the status reaching the
   client described the error page's access rules rather than the original fault.
   Measured against the running stack, this was broader than the "404s and 500s"
   it had been filed as: an ordinary validation `400` on a `permitAll` endpoint
   came back `401` with a `WWW-Authenticate` header too. Every bug in the system
   presented as broken authentication.
-  Permitting it leaks nothing — `server.error.include-message` and
+  Permitting it leaks nothing: `server.error.include-message` and
   `include-stacktrace` both default to `never`, so the body is timestamp,
   status, error and path.
   One case is not this bug and did not change: a request to a path outside every
@@ -270,25 +270,25 @@ flowchart LR
   would be to disclose which paths exist.
   *Why:* the first hour on a new instance is spent curling unfamiliar URLs and
   reading status codes. Deferring this costs more in that hour than anywhere
-  else in the project — demonstrated live, in fact: the first `404` attempted
+  else in the project, demonstrated live, in fact: the first `404` attempted
   against the deployed API came back `401`, because the instance had cloned the
   branch before the fix landed on it.
 
-- [x] **Domain and DNS** — ~1h
+- [x] **Domain and DNS** (~1h)
   Landed as **`papapreco.duckdns.org`, a free subdomain, with no registrar, no
   Route 53 and no Elastic IP.** That is three deliberate departures from what
   this item originally said, and the reasoning for each is below.
   *Why:* the name is what the APK is built against, and TLS is issued for it.
 
   **Why a name at all, given that the APK could hold an address.** Not for TLS,
-  as this document previously claimed — Let's Encrypt has issued certificates
+  as this document previously claimed. Let's Encrypt has issued certificates
   for bare IP addresses since January 2026, so an `https://<ip>/` API would
   satisfy Android's cleartext restriction. Two things rule it out anyway. IP
   certificates are capped at 160 hours, six days, precisely because an address
   can be reassigned to a stranger; an instance stopped for a week comes back
   with an expired certificate every time. And the base URL is compiled into the
   APK, so an address there has to stay true on every phone that ever installed
-  it — forfeiting any instance or region move, the address release below, and
+  it, forfeiting any instance or region move, the address release below, and
   the Fargate target at the end of this phase. The name buys the right to change
   the address later. That is the whole purchase.
 
@@ -297,11 +297,11 @@ flowchart LR
   17, Cloudflare registrar with Cloudflare DNS ~USD 10.46, `registro.br`
   `.com.br` ~USD 13. Against a stack costing ~USD 19/month, none of these is
   where the money goes, and Route 53 would have been the better *learning*
-  purchase — a hosted zone is the thing Terraform later manages.
+  purchase, since a hosted zone is the thing Terraform later manages.
   It went to DuckDNS because the goal of this phase was restated more narrowly
   than the document assumed: get the API reachable and the APK installable, not
   ship a product. The cost of that choice is a third-party dependency in the
-  critical path — if DuckDNS goes away, every installed APK loses its API with
+  critical path: if DuckDNS goes away, every installed APK loses its API with
   no recourse, which is the exact failure a domain exists to prevent. Accepted
   knowingly, because installs are expected to be short evaluations rather than
   sustained use. **Revisit before the app is put in front of anyone who
@@ -310,8 +310,8 @@ flowchart LR
   **Why no Elastic IP, having allocated one.** It was allocated and associated
   first, which is what made the next item's certificate possible, and then
   released. An Elastic IP is billed at USD 0.005/hr whether or not it is
-  attached to a running instance — ~USD 3.65/month, more than twice the EBS cost
-  of a stopped instance — and a stopped instance is the whole point of the cost
+  attached to a running instance (~USD 3.65/month, more than twice the EBS cost
+  of a stopped instance), and a stopped instance is the whole point of the cost
   strategy above. In its place, `deploy/duckdns/` in the API repository: a
   `systemd` oneshot plus timer that publishes the instance's current public
   address 15 seconds after boot and every five minutes thereafter. The update
@@ -332,7 +332,7 @@ flowchart LR
   be recovered.
 
   **`duckdns-park.service`, which was not in the plan.** A stopped instance
-  returns its public address to AWS, which reassigns it — while the DNS record
+  returns its public address to AWS, which reassigns it, while the DNS record
   still points there until the instance comes back. That window is not just
   misrouted traffic: HTTP-01 proves control of whatever a name currently
   resolves to, so whoever received that address could be issued a *valid*
@@ -343,7 +343,7 @@ flowchart LR
   while there is still a network. `DefaultDependencies=no` would have moved it
   past the network teardown and silently broken it.
 
-- [x] **Caddy in front, for HTTPS** — ~1h
+- [x] **Caddy in front, for HTTPS** (~1h)
   A `caddy` service in the compose file, reverse-proxying to `api` over the
   compose network. The Caddyfile is the domain and one `reverse_proxy` line;
   certificate issuance, renewal at 60 days, and the `:80` → `:443` redirect are
@@ -358,7 +358,7 @@ flowchart LR
   for a specific reason: passing `-f` stops Compose auto-loading
   `docker-compose.override.yml`, and on the instance that override is what caps
   the JVM heap. A second file would have silently removed the memory limits as a
-  side effect of adding TLS — reintroducing the exact failure the previous item
+  side effect of adding TLS, reintroducing the exact failure the previous item
   was written to fix.
 
   **`CADDY_DOMAIN` is defaulted to empty rather than guarded with `:?`.** The
@@ -367,7 +367,7 @@ flowchart LR
   file before it applies profiles**, so a guard on a service that is not being
   started still fires. An empty default leaves the Caddyfile with no site
   address, which Caddy rejects at parse time, before any ACME call. The error
-  message does not say so — an empty name makes the block look like Caddy's
+  message does not say so: an empty name makes the block look like Caddy's
   global options and it reports `unrecognized global option: reverse_proxy`.
 
   Certificates live in a named volume. Let's Encrypt issues five identical
@@ -389,7 +389,7 @@ flowchart LR
   to read a file from disk at all, and `secrets/` is mounted into the API
   container rather than into Caddy.
 
-- [ ] **Nightly `pg_dump`, to the instance's own volume** — ~30min
+- [ ] **Nightly `pg_dump`, to the instance's own volume** (~30min)
   Cron on the instance, keeping the last 7 dumps.
   *Why:* PostgreSQL in a container on the application's own instance has no
   managed backups and no failover. That is the trade being made in exchange for
@@ -397,22 +397,46 @@ flowchart LR
   oversight discovered later.
   **Reduced from "to S3", deliberately.** A dump on the same EBS volume as the
   database it came from protects against the failure that actually happens here
-  — a bad migration, a `docker compose down -v`, a mistaken `DELETE` — and not
+  (a bad migration, a `docker compose down -v`, a mistaken `DELETE`), and not
   at all against losing the volume. That is the correct trade only because the
   data is demo data with no users depending on it. It stops being correct the
   moment anyone's real receipts are in there, and at that point S3 with a
   30-day lifecycle rule is the item this used to be.
 
-- [~] **Ship a signed release APK** — ~3h
+- [~] **Ship a signed release APK** (~3h)
   **Built, signed and verified working on a real device on 7 Aug 2026; not yet
   published.** Steps 1–4 below are done. `apksigner` confirms the APK carries
   the release certificate (`b1a2a339…158681`) rather than the debug one, and
   installing it proved the deployment end to end from a phone on mobile data:
   HTTPS through Caddy, registration, the confirmation email out through Gmail
   SMTP, login against the JWT keys, and a product written and read back.
-  Two things remain: **Google Sign-In still fails** — the OAuth clients were
-  registered but the app reports `Erro de conexão`, a generic handler that hides
-  the real exception — and step 5, the GitHub release, has not been done.
+  **Google Sign-In was fixed on 12 Aug 2026** and verified on a real phone
+  against the live API; **only step 5, the GitHub release, remains.**
+  The cause was not a misregistered fingerprint, which is what the failure
+  looked like. Project `736661748519` held three OAuth clients and all three
+  were of type **Android**: debug, release, and a stale one from 2024. It never
+  had a **Web application** client. But `serverClientId` in `login_page.dart`
+  and `googleClientId` in `AuthController` both named one, so both pointed at a
+  client ID that existed nowhere in the project, and sign-in could not have
+  worked on any device or any build. Created the Web client and wired its ID
+  into both files (`8f27e80`, `db9fc2a`).
+  The distinction the original attempt missed: the Android clients are what
+  *authorise* the app, matched on package name plus signing fingerprint, and
+  they remain necessary. The Web client is what the ID token is *for*: it is
+  the token's audience, and the audience is what the API validates. Registering
+  only Android clients satisfies half of a two-part requirement, and the half it
+  leaves out is the half the server checks.
+  The real exception was `ApiException: 10` (`DEVELOPER_ERROR`) the whole time,
+  hidden behind the generic `Erro de conexão` handler, the same handler that,
+  per step 3 below, had already let this break unnoticed once before. **The
+  handler is the reason this cost days rather than minutes**, and it is still
+  there; narrowing it is worth its own item.
+  **The fix is two-sided, and the server side is easy to forget.** The API
+  validates the token's audience, so an app built with the new client ID fails
+  in exactly the original way until the *instance* is redeployed. It was found
+  two commits behind with the old ID still compiled in, and had it not been
+  caught the release APK would have failed identically, against a fix that was
+  already correct. Deploy the API first, then build the APK.
   Worth recording because it looked like a bug and was not: **product search
   returned nothing on first run.** The server sets
   `FLYWAY_LOCATIONS=classpath:db/migration` with the seed location deliberately
@@ -427,9 +451,9 @@ flowchart LR
   2. Wire `signingConfigs.release` into `android/app/build.gradle`. Both
      `signingConfig` lines are currently commented out, so release builds are
      signed with the debug key. While there, delete the commented-out block
-     above them — it carries a plaintext keystore password for a keystore that
+     above them, since it carries a plaintext keystore password for a keystore that
      is not in the repository.
-  3. Register the release key's SHA-1 fingerprint — **not in the Firebase
+  3. Register the release key's SHA-1 fingerprint, **not in the Firebase
      console, which is what this document used to say.** Google Sign-In here
      does not read `google-services.json` at all: `login_page.dart` passes a
      hardcoded `serverClientId`, and `AuthController` validates the token's
@@ -441,9 +465,14 @@ flowchart LR
      An Android OAuth client holds exactly one package name and one
      fingerprint, so debug and release are necessarily two clients.
      Found while doing this: the only client registered carried a *third*
-     fingerprint, from a machine that no longer exists — so Google Sign-In had
+     fingerprint, from a machine that no longer exists, so Google Sign-In had
      been broken locally for some time and had gone unnoticed, because the app
      reports every failure as `Erro de conexão`.
+     **A Web application client is also required, and is a separate thing.**
+     The Android clients authorise the app; the Web client is the audience of
+     the ID token the app sends and the value both `serverClientId` and
+     `googleClientId` must hold. See the note above: registering only the
+     Android clients is what kept this broken.
   4. Build with
      `--dart-define=API_BASE_URL=https://papapreco.duckdns.org/papaprecoapi`.
   5. Publish to GitHub Releases.
@@ -453,7 +482,7 @@ flowchart LR
 
 ### Cost
 
-Revised against what was actually launched — us-east-2, t3a.small — rather than
+Revised against what was actually launched (us-east-2, t3a.small) rather than
 against the estimate this document carried before. On-demand list prices; the
 launch wizard shows the live hourly rate per instance type and is the
 authoritative source.
@@ -462,22 +491,22 @@ authoritative source.
 |---|---|---|
 | EC2 t3a.small (2 GB) | ~USD 13.70 | USD 0.0188/hr × 730. t3.small is the Intel equivalent at ~USD 15. t3.micro is ~USD 8, but 1 GB is tight with PostgreSQL alongside |
 | EBS gp3, 20 GB | ~USD 1.60 | USD 0.08/GB-month. Billed while the instance is stopped, too |
-| Public IPv4 | ~USD 3.65 | USD 0.005/hr on every public address, since Feb 2024. Auto-assigned, not reserved — so it is billed only while the instance runs |
+| Public IPv4 | ~USD 3.65 | USD 0.005/hr on every public address, since Feb 2024. Auto-assigned, not reserved, so it is billed only while the instance runs |
 | DNS | USD 0 | DuckDNS subdomain, no registrar and no hosted zone |
 | Backups | USD 0 | `pg_dump` to the instance's own volume, rather than the S3 bucket this document originally planned |
 | **Total, running** | **~USD 19** | |
-| **Total, stopped** | **~USD 1.60** | The 20 GiB volume alone. Nothing else in the stack is billed while it is off — which is what releasing the Elastic IP bought |
+| **Total, stopped** | **~USD 1.60** | The 20 GiB volume alone. Nothing else in the stack is billed while it is off, which is what releasing the Elastic IP bought |
 
 Note the collision this creates with the item above: **a USD 20 budget alarm
 will trip in any full month the instance is left running**, at 85% around day
-25 and at 100% on the last day or two. That is not a miscalibration — it is a
-smoke detector set just above steady state, which is the correct place for one —
+25 and at 100% on the last day or two. That is not a miscalibration; it is a
+smoke detector set just above steady state, which is the correct place for one,
 but the first alert should be recognised as arithmetic rather than as news. The
 alternative is not a higher threshold, it is the line above: the instance does
 not need to run 24/7 during a phase where nobody is using it yet.
 
 The free tier is not a plan. Accounts created after 15 July 2025 get USD 100–200
-in credits expiring after six months, not the old 12-month allowance — check
+in credits expiring after six months, not the old 12-month allowance. Check
 which model the account is on before relying on it.
 
 ### Next AWS steps, once it is live
@@ -485,21 +514,21 @@ which model the account is on before relying on it.
 Deliberately sequenced after the app is publicly working. Each one is a single
 new primitive, learned against a system that already runs.
 
-- [ ] **Move PostgreSQL to RDS** — ~3h, +~USD 14/month
+- [ ] **Move PostgreSQL to RDS** (~3h, +~USD 14/month)
   *Why:* teaches subnet groups, security groups between two resources, and
-  managed backups. The best next primitive to add — but not on day one, where
+  managed backups. The best next primitive to add, but not on day one, where
   it would be one more unfamiliar thing standing between the code and a working
   URL.
-- [ ] **Terraform: instance, security group, EBS, the DuckDNS units** — ~5h
+- [ ] **Terraform: instance, security group, EBS, the DuckDNS units** (~5h)
   *Why:* codifying something already built and understood. Destroy it, bring it
   back with `terraform apply`, and the value of infrastructure-as-code is
   demonstrated rather than asserted.
-- [ ] **Publish the Terraform in a public `papapreco-infra` repository** — ~1h
+- [ ] **Publish the Terraform in a public `papapreco-infra` repository** (~1h)
   *Why:* infrastructure-as-code is what recruiters actually search for.
-- [ ] **GitHub Actions: build the image, deploy over SSH** — ~3h
+- [ ] **GitHub Actions: build the image, deploy over SSH** (~3h)
   *Why:* deployment is manual until this exists.
 
-### Where this goes later — the Fargate target
+### Where this goes later: the Fargate target
 
 Not scheduled. Recorded because the reasoning still holds and this is where the
 system should end up once the budget allows, or once the single instance starts
@@ -518,7 +547,7 @@ flowchart LR
 
 Fargate tasks would run in **public subnets** with a restrictive security
 group: a NAT Gateway costs ~USD 32/month and buys nothing at this scale. That
-remains a deliberate cost/security trade-off — see the corresponding ADR.
+remains a deliberate cost/security trade-off; see the corresponding ADR.
 Credentials would move to SSM Parameter Store, which is cheaper than Secrets
 Manager and sufficient without rotation needs, and GitHub Actions would reach
 AWS via OIDC rather than long-lived access keys in repository secrets.
@@ -536,39 +565,75 @@ Corrected cost, replacing the ~USD 25–30 estimate this document carried before
 
 ---
 
-## Phase 2 — CI and tests
+## Phase 2: CI and tests
 
 Predictable, low-variance work. Expands or contracts to fill remaining time.
 
-- [ ] **GitHub Actions on both repositories** — ~4h
+- [ ] **GitHub Actions on both repositories** (~4h)
   `analyze` + `test` + `build`, enforced as a required check on pull requests.
 
-- [ ] **API: JUnit + Testcontainers against real PostgreSQL** — ~6h
+- [~] **Pin the toolchain, not just the dependencies** (~1h)
+  Prompted by picking the project up after a gap and hitting version problems
+  that no committed file explained. Most of it was already frozen: `pubspec.lock`
+  is committed, AGP 8.11.1 / Kotlin 2.2.20 / Gradle 8.14 are pinned in
+  `settings.gradle`, and on the API the `spring-boot-starter-parent` 3.3.2 BOM
+  pins all 22 otherwise-unversioned artifacts, with explicit versions on the
+  rest and no ranges anywhere.
+  Two things were not, and the first is the one that bites:
+  **the Flutter SDK version was recorded nowhere.** It is not merely the Dart
+  package resolver: `android/app/build.gradle` reads `compileSdk`, `minSdk`,
+  `targetSdk` and `ndkVersion` from `flutter.*`, so changing Flutter changes the
+  Android API levels the APK is compiled and targeted against while every
+  tracked file stays byte-identical. **Done:** both READMEs now name Flutter
+  3.44.1 / Dart 3.12.1 as a prerequisite, and the runbook records why that is
+  load-bearing along with the rule that `pub get` honours the lock while
+  `pub upgrade` rewrites it against caret constraints.
+  **Still open, deliberately deferred as the more invasive half:** replace the
+  four `flutter.*` derivations with literals, so an SDK bump is a reviewable
+  diff rather than a silent one; and pin `eclipse-temurin:17-jdk`/`17-jre` in
+  the Dockerfile, which are floating tags that hand a rebuild a different JDK
+  patch months later, the exact failure the Dockerfile item in Phase 0 claims
+  to have fixed.
+  *Why here:* CI is where an unpinned toolchain does the most damage, because a
+  green build on a laptop and a red one on a runner have no diff to compare.
+  Documenting the version is worth little without something that reads it, so
+  this stays `[~]` until the literals land or a `.tool-versions`/FVM pin is
+  adopted. Right now nothing enforces any of it.
+
+- [ ] **Narrow the `Erro de conexão` handler** (~2h)
+  The login flow reports every failure with one generic message, which hid an
+  `ApiException: 10` for as long as Google Sign-In was broken and hid it a
+  second time when a stale fingerprint broke it locally. Surface the exception
+  type, and log the cause even where the user-facing string stays friendly.
+  *Why:* this handler is the single most expensive line of code in the project
+  so far, measured in time lost to it. See the Phase 1 APK item.
+
+- [ ] **API: JUnit + Testcontainers against real PostgreSQL** (~6h)
   *Why:* testing repositories against a real database instead of mocks is a
   strong seniority signal and catches the bugs mocks hide.
 
-- [ ] **Flutter: unit tests for the NFC-e parser and repositories** — ~6h
+- [ ] **Flutter: unit tests for the NFC-e parser and repositories** (~6h)
   *Why:* the NFC-e parser is the most complex and highest-risk logic in the
-  codebase. Coverage percentage is not the goal — covering the hard parts is.
+  codebase. Coverage percentage is not the goal; covering the hard parts is.
 
-- [ ] **Widget tests for 3–4 critical screens** — ~4h
+- [ ] **Widget tests for 3–4 critical screens** (~4h)
 
-- [ ] **Selective refactor for testability (2–3 files maximum)** — ~4h
+- [ ] **Selective refactor for testability (2–3 files maximum)** (~4h)
   Extract logic out of `detalhe_produto_page.dart` (590 lines) and
   `alertas_usuario_page.dart` (470 lines) only where it unlocks a test.
   *Why:* refactoring for aesthetics alone is not worth the time right now.
 
 ---
 
-## Phase 3 — Presentation
+## Phase 3: Presentation
 
-- [ ] **Rewrite README in English** — ~3h
+- [ ] **Rewrite README in English** (~3h)
   30-second demo GIF, Mermaid architecture diagram, live demo link, CI badges.
 
-- [ ] **Architecture Decision Records in `docs/adr/`** — ~3h
+- [ ] **Architecture Decision Records in `docs/adr/`** (~3h)
   Minimum set:
   1. Why Flutter over native
-  2. Why a single EC2 instance over ECS Fargate — cost, and building by hand
+  2. Why a single EC2 instance over ECS Fargate: cost, and building by hand
      before codifying in Terraform
   3. PostgreSQL in a container over RDS, and the backup trade it carries
   4. Public subnets over NAT Gateway (cost/security trade-off), for when the
@@ -577,54 +642,54 @@ Predictable, low-variance work. Expands or contracts to fill remaining time.
   *Why:* seniority is assessed on documented trade-offs, not on technology
   choices. Highest signal-per-hour item in this roadmap.
 
-- [ ] **Distributable demo** — ~3h
+- [ ] **Distributable demo** (~3h)
   APK on GitHub Releases + short video. Recruiters do not install APKs; the
   video is what actually gets watched.
 
-- [ ] **Conventional commits in English from this point forward** — ongoing
-- [-] **Rewrite existing git history** — *skipped:* cost outweighs benefit.
+- [ ] **Conventional commits in English from this point forward** (ongoing)
+- [-] **Rewrite existing git history**. *Skipped:* cost outweighs benefit.
 
 ---
 
-## Phase 4 — Differentiators (post-MVP)
+## Phase 4: Differentiators (post-MVP)
 
 This is what separates the project from every other CRUD-on-AWS portfolio. Not
 part of the initial sprint.
 
-- [ ] **Asynchronous NFC-e processing via SQS** — ~20h
+- [ ] **Asynchronous NFC-e processing via SQS** (~20h)
   App submits the receipt URL → API enqueues to SQS → worker (Lambda, or a
   second container alongside the API) scrapes SEFAZ → persists. With a dead-letter queue, exponential backoff
   and idempotency keys.
   *Why:* scraping a government website is slow and fragile, which is a **real**
-  justification for queues, retries and a DLQ — not architectural decoration.
+  justification for queues, retries and a DLQ, not architectural decoration.
   This is the strongest interview story the project has.
 
-- [ ] **Observability** — ~8h
+- [ ] **Observability** (~8h)
   Structured JSON logging, end-to-end correlation IDs, `/actuator/health` and
   `/metrics`, a CloudWatch dashboard, alarms on 5xx rate and disk usage.
 
-- [ ] **Security hardening** — ~8h
+- [ ] **Security hardening** (~8h)
   Rate limiting, refresh-token rotation, and restricting the Firebase API key in
   the GCP console. Note: `google-services.json` is committed, which is expected
-  for a client config shipped inside the APK — but the key must be restricted,
+  for a client config shipped inside the APK, but the key must be restricted,
   and the reasoning should be explainable.
 
-- [ ] **Performance** — ~8h
+- [ ] **Performance** (~8h)
   Proper geospatial indexing (PostGIS or `earthdistance`), pagination on list
   endpoints, `EXPLAIN ANALYZE` on the ranking query.
 
-- [ ] **Flutter Web build on S3 + CloudFront** — ~6h
+- [ ] **Flutter Web build on S3 + CloudFront** (~6h)
   Degraded mode (no scanner), but gives recruiters a clickable demo.
 
 ---
 
 ## Explicitly out of scope
 
-Recorded deliberately — knowing what *not* to build is part of the argument.
+Recorded deliberately, because knowing what *not* to build is part of the argument.
 
 | Not doing | Reason |
 |---|---|
-| EKS / Kubernetes | ~USD 73/month for the control plane alone — four times the entire current setup. Nothing here needs orchestration. |
+| EKS / Kubernetes | ~USD 73/month for the control plane alone, four times the entire current setup. Nothing here needs orchestration. |
 | Microservices | The domain does not justify it. Would read as over-engineering. |
 | Multi-AZ, aggressive auto-scaling | Documented as a scaling strategy in an ADR rather than paid for. |
 | 80% test coverage target | Coverage of the hard logic matters; the number does not. |
