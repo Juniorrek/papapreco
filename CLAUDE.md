@@ -1,4 +1,4 @@
-# PapaPreco — working agreements
+# PapaPreco: working agreements
 
 This file is committed on purpose. Project conventions live here rather than in
 any assistant's local/machine-scoped memory, because this project is worked on
@@ -13,7 +13,7 @@ The engineering plan lives in [docs/ROADMAP.md](docs/ROADMAP.md).
 comments, test names, exception and log messages, commit messages, and
 documentation.
 
-The existing codebase is largely Portuguese — class names (`ProdutoRest`,
+The existing codebase is largely Portuguese: class names (`ProdutoRest`,
 `VotoUsuarioProduto`), method names (`buscarPorNome`, `redefinirSenha`),
 comments and exception strings. **Leave it alone.** It is not being renamed as
 part of ongoing work; a wholesale rename is ~60 files of churn and is explicitly
@@ -27,7 +27,7 @@ So, in practice:
   callers' names; write any *new* comments and messages in English.
 - Domain terms that are the ubiquitous language of the product (`produto`,
   `alerta`, `voto`, `nfce`) stay in Portuguese when they are the name of the
-  domain concept, including in new code — `Produto`, not `Product`. Everything
+  domain concept, including in new code: `Produto`, not `Product`. Everything
   around them is English.
 
 This mixed state is deliberate and transitional, not an oversight.
@@ -37,7 +37,7 @@ This mixed state is deliberate and transitional, not an oversight.
 Nothing environment-specific is committed. All of it is passed at build time via
 `--dart-define`; see the Configuration section of [README.md](README.md) for the
 current list. `lib/rest/api.dart` is the single place the API address is
-resolved — call sites build URLs with `API.uri(path, [query])` and never
+resolved. Call sites build URLs with `API.uri(path, [query])` and never
 construct a host or scheme themselves.
 
 ## Before calling work done
