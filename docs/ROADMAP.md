@@ -403,15 +403,16 @@ flowchart LR
   moment anyone's real receipts are in there, and at that point S3 with a
   30-day lifecycle rule is the item this used to be.
 
-- [~] **Ship a signed release APK** (~3h)
-  **Built, signed and verified working on a real device on 7 Aug 2026; not yet
-  published.** Steps 1–4 below are done. `apksigner` confirms the APK carries
-  the release certificate (`b1a2a339…158681`) rather than the debug one, and
-  installing it proved the deployment end to end from a phone on mobile data:
-  HTTPS through Caddy, registration, the confirmation email out through Gmail
-  SMTP, login against the JWT keys, and a product written and read back.
+- [x] **Ship a signed release APK** (~3h)
+  **Published on 13 Aug 2026 as [`v1.0.0`](https://github.com/Juniorrek/papapreco/releases/tag/v1.0.0).**
+  Built and signed on 7 Aug 2026, verified working on a real device the same
+  day: `apksigner` confirms the APK carries the release certificate
+  (`b1a2a339…158681`) rather than the debug one, and installing it proved the
+  deployment end to end from a phone on mobile data: HTTPS through Caddy,
+  registration, the confirmation email out through Gmail SMTP, login against the
+  JWT keys, and a product written and read back.
   **Google Sign-In was fixed on 12 Aug 2026** and verified on a real phone
-  against the live API; **only step 5, the GitHub release, remains.**
+  against the live API.
   The cause was not a misregistered fingerprint, which is what the failure
   looked like. Project `736661748519` held three OAuth clients and all three
   were of type **Android**: debug, release, and a stale one from 2024. It never
@@ -475,7 +476,18 @@ flowchart LR
      Android clients is what kept this broken.
   4. Build with
      `--dart-define=API_BASE_URL=https://papapreco.duckdns.org/papaprecoapi`.
-  5. Publish to GitHub Releases.
+  5. Publish to GitHub Releases. Tag `v1.0.0`, matching `pubspec.yaml`'s
+     `version: 1.0.0+1`, with the APK attached as `papapreco-1.0.0.apk` rather
+     than the build system's `app-release.apk`, since the asset name is what a
+     stranger downloads and has to recognise later. The rebuild for publication
+     came out byte-for-byte the same size as the 12 Aug build, which is the
+     evidence that only documentation had changed since.
+     Note for whoever writes the README link: a release marked **pre-release**
+     is excluded from `releases/latest`, so both
+     `api.github.com/.../releases/latest` and
+     `github.com/.../releases/latest/download/<asset>` answer **404** while that
+     box is ticked. The README therefore links the versioned URL, which always
+     resolves, at the cost of an edit per release.
   *Why:* this is the item the entire phase exists to reach. It is also the one
   with the most ways to look finished while being broken for everyone except
   the person who built it.

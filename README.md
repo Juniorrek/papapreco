@@ -4,6 +4,37 @@
 
 ---
 
+## 📱 Try it
+
+**[Download the APK (v1.0.0)](https://github.com/Juniorrek/papapreco/releases/download/v1.0.0/papapreco-1.0.0.apk)**, or browse
+[all releases](https://github.com/Juniorrek/papapreco/releases).
+
+Nothing needs to be installed or run: the build points at a live API, so it
+works on a phone straight after installing. Requires **Android 7.0 (API 24) or
+newer**.
+
+The APK is sideloaded rather than published on Play, so Android asks for
+permission before installing it: open the downloaded file, allow installs from
+whichever app you downloaded it with, then install. Register with an email
+address you can read, since sign-up sends a confirmation code, or use "Sign in
+with Google".
+
+It is signed with the project's release key. To confirm you have that build and
+not a repackaged one:
+
+```bash
+apksigner verify --print-certs papapreco-1.0.0.apk
+# SHA-1: b1a2a339f4196f18d523c78a2869c3e202158681
+```
+
+Search returns little at first, on purpose: the demo seed is deliberately not
+loaded on the server, because those accounts carry a published password.
+Reporting a price populates it.
+
+The sections below are for running the project from source instead.
+
+---
+
 ## ✨ Key Features
 
 - **QR Code Scanning**: Scan NFC-e receipts to extract product details and prices  
