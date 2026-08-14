@@ -1,4 +1,4 @@
-# Papapreco 📊
+# Papapreco 💸
 
 **PapaPreco** is a **Flutter** mobile application designed for collaborative price comparison. Users can manually add product prices or scan NFC-e QR codes to input items automatically. The app supports searching by product name, price range, or location, allowing consumers to make more informed purchasing decisions.
 
@@ -6,14 +6,13 @@
 
 ## 📱 Try it
 
-**[Download the APK (v1.0.0)](https://github.com/Juniorrek/papapreco/releases/download/v1.0.0/papapreco-1.0.0.apk)**, or browse
-[all releases](https://github.com/Juniorrek/papapreco/releases).
+**[Download the pre-release APK (v1.0.0)](https://github.com/Juniorrek/papapreco/releases/download/v1.0.0/papapreco-1.0.0.apk)**.
 
-Nothing needs to be installed or run: the build points at a live API, so it
+Nothing needs to be setup: this build points at a live API on AWS, so it
 works on a phone straight after installing. Requires **Android 7.0 (API 24) or
 newer**.
 
-The APK is sideloaded rather than published on Play, so Android asks for
+<!-- The APK is sideloaded rather than published on Play, so Android asks for
 permission before installing it: open the downloaded file, allow installs from
 whichever app you downloaded it with, then install. Register with an email
 address you can read, since sign-up sends a confirmation code, or use "Sign in
@@ -29,7 +28,7 @@ apksigner verify --print-certs papapreco-1.0.0.apk
 
 Search returns little at first, on purpose: the demo seed is deliberately not
 loaded on the server, because those accounts carry a published password.
-Reporting a price populates it.
+Reporting a price populates it. -->
 
 The sections below are for running the project from source instead.
 
